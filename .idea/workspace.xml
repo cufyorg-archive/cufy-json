@@ -12,7 +12,11 @@
       <ProjectState />
     </projectState>
   </component>
+  <component name="Git.Settings">
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
+  </component>
   <component name="ProjectId" id="1WoKmzSc08sP95gGVWjhfJnQde1" />
+  <component name="ProjectLevelVcsManager" settingsEditedManually="true" />
   <component name="ProjectViewState">
     <option name="showExcludedFiles" value="true" />
     <option name="showLibraryContents" value="true" />
@@ -21,6 +25,7 @@
   </component>
   <component name="PropertiesComponent">
     <property name="RunOnceActivity.ShowReadmeOnStart" value="true" />
+    <property name="SHARE_PROJECT_CONFIGURATION_FILES" value="true" />
     <property name="WebServerToolWindowFactoryState" value="false" />
     <property name="android.sdk.path" value="$USER_HOME$/AppData/Local/Android/Sdk" />
     <property name="aspect.path.notification.shown" value="true" />
@@ -99,7 +104,7 @@
       <option name="number" value="Default" />
       <option name="presentableId" value="Default" />
       <updated>1579810670187</updated>
-      <workItem from="1579810672784" duration="1187000" />
+      <workItem from="1579810672784" duration="1632000" />
     </task>
     <servers />
   </component>
@@ -115,21 +120,21 @@
       <screen x="0" y="0" width="1920" height="1050" />
     </state>
     <state x="740" y="279" key="FileChooserDialogImpl/0.0.1920.1050@0.0.1920.1050" timestamp="1579811217227" />
-    <state width="1877" height="285" key="GridCell.Tab.0.bottom" timestamp="1579811966885">
+    <state width="1877" height="285" key="GridCell.Tab.0.bottom" timestamp="1579812361062">
       <screen x="0" y="0" width="1920" height="1050" />
     </state>
-    <state width="1877" height="285" key="GridCell.Tab.0.bottom/0.0.1920.1050@0.0.1920.1050" timestamp="1579811966885" />
-    <state width="1877" height="285" key="GridCell.Tab.0.center" timestamp="1579811966885">
+    <state width="1877" height="285" key="GridCell.Tab.0.bottom/0.0.1920.1050@0.0.1920.1050" timestamp="1579812361062" />
+    <state width="1877" height="285" key="GridCell.Tab.0.center" timestamp="1579812361062">
       <screen x="0" y="0" width="1920" height="1050" />
     </state>
-    <state width="1877" height="285" key="GridCell.Tab.0.center/0.0.1920.1050@0.0.1920.1050" timestamp="1579811966885" />
-    <state width="1877" height="285" key="GridCell.Tab.0.left" timestamp="1579811966885">
+    <state width="1877" height="285" key="GridCell.Tab.0.center/0.0.1920.1050@0.0.1920.1050" timestamp="1579812361062" />
+    <state width="1877" height="285" key="GridCell.Tab.0.left" timestamp="1579812361062">
       <screen x="0" y="0" width="1920" height="1050" />
     </state>
-    <state width="1877" height="285" key="GridCell.Tab.0.left/0.0.1920.1050@0.0.1920.1050" timestamp="1579811966885" />
-    <state width="1877" height="285" key="GridCell.Tab.0.right" timestamp="1579811966885">
+    <state width="1877" height="285" key="GridCell.Tab.0.left/0.0.1920.1050@0.0.1920.1050" timestamp="1579812361062" />
+    <state width="1877" height="285" key="GridCell.Tab.0.right" timestamp="1579812361062">
       <screen x="0" y="0" width="1920" height="1050" />
     </state>
-    <state width="1877" height="285" key="GridCell.Tab.0.right/0.0.1920.1050@0.0.1920.1050" timestamp="1579811966885" />
+    <state width="1877" height="285" key="GridCell.Tab.0.right/0.0.1920.1050@0.0.1920.1050" timestamp="1579812361062" />
   </component>
 </project>
