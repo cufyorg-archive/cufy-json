@@ -98,7 +98,7 @@ import java.util.concurrent.atomic.AtomicReference;
  * </ul>
  *
  * @author LSaferSE
- * @version 10 release (23-Jan-2020)
+ * @version 11 release (25-Jan-2020)
  * @see <a href="http://www.json.org/">json.org</a> for more about JSON
  * @since 09-Jul-19
  */
@@ -151,7 +151,6 @@ public class JSON extends Format implements Global {
 	protected JSONFormatPosition newFormatPosition() {
 		return new JSONFormatPosition();
 	}
-
 	@Override
 	@StaticMethod
 	protected JSONParsePosition newParsePosition() {
@@ -169,18 +168,20 @@ public class JSON extends Format implements Global {
 	 * @throws NullPointerException     if any of the given parameters is null
 	 * @throws IllegalArgumentException if the given 'array' is neither a collection nor an array
 	 */
-	@FormatMethod(@Type(subin = {
-			Collection.class,
-			Object[].class,
-			boolean[].class,
-			byte[].class,
-			char[].class,
-			double[].class,
-			float[].class,
-			int[].class,
-			long[].class,
-			short[].class
-	}))
+	@FormatMethod(
+			@Type(
+					subin = {Collection.class,
+							 Object[].class,
+					},
+					in = {boolean[].class,
+						  byte[].class,
+						  char[].class,
+						  double[].class,
+						  float[].class,
+						  int[].class,
+						  long[].class,
+						  short[].class
+					}))
 	protected void formatArray(Writer writer, Object array, JSONFormatPosition position) throws IOException {
 		if (DEBUGGING) {
 			Objects.requireNonNull(array, "array");
@@ -219,7 +220,6 @@ public class JSON extends Format implements Global {
 			}
 		}
 	}
-
 	/**
 	 * Format the given {@link Boolean}. To a {@link JSON} text. Then {@link Writer#append} it to the given {@link Writer}.
 	 *
@@ -229,7 +229,11 @@ public class JSON extends Format implements Global {
 	 * @throws IOException          when any I/O exception occurs
 	 * @throws NullPointerException if any of the given parameters is null
 	 */
-	@FormatMethod(@Type(in = {Boolean.class, boolean.class}))
+	@FormatMethod(
+			@Type(
+					in = {Boolean.class,
+						  boolean.class
+					}))
 	protected void formatBoolean(Writer writer, Boolean bool) throws IOException {
 		if (DEBUGGING) {
 			Objects.requireNonNull(bool, "bool");
@@ -238,7 +242,6 @@ public class JSON extends Format implements Global {
 
 		writer.append(bool ? val.TRUE : val.FALSE);
 	}
-
 	/**
 	 * Append {@link val#NULL} to the given writer.
 	 *
@@ -247,7 +250,10 @@ public class JSON extends Format implements Global {
 	 * @throws IOException          when any I/O exception occurs
 	 * @throws NullPointerException if any of the given parameters is null
 	 */
-	@FormatMethod(@Type(in = Void.class))
+	@FormatMethod(
+			@Type(
+					in = Void.class
+			))
 	protected void formatNull(Writer writer) throws IOException {
 		if (DEBUGGING) {
 			Objects.requireNonNull(writer, "writer");
@@ -255,7 +261,6 @@ public class JSON extends Format implements Global {
 
 		writer.append(val.NULL);
 	}
-
 	/**
 	 * Format the given {@link Number}. To a {@link JSON} text. Then {@link Writer#append} it to the given {@link Writer}.
 	 *
@@ -265,14 +270,16 @@ public class JSON extends Format implements Global {
 	 * @throws IOException          when any I/O exception occurs
 	 * @throws NullPointerException if any of the given parameters is null
 	 */
-	@FormatMethod(@Type(subin = {
-			Number.class,
-			double.class,
-			float.class,
-			int.class,
-			long.class,
-			short.class
-	}))
+	@FormatMethod(
+			@Type(
+					subin = Number.class,
+					in = {
+							double.class,
+							float.class,
+							int.class,
+							long.class,
+							short.class
+					}))
 	protected void formatNumber(Writer writer, Number number) throws IOException {
 		if (DEBUGGING) {
 			Objects.requireNonNull(number, "number");
@@ -281,7 +288,6 @@ public class JSON extends Format implements Global {
 
 		writer.append(NumberFormat.getInstance(Locale.ENGLISH).format(number));
 	}
-
 	/**
 	 * Format the given {@link Map Object}. To a {@link JSON} text. Then {@link Writer#append} it to the given {@link Writer}.
 	 *
@@ -292,7 +298,10 @@ public class JSON extends Format implements Global {
 	 * @throws IOException          when any I/O exception occurs
 	 * @throws NullPointerException if any of the given parameters is null
 	 */
-	@FormatMethod(@Type(subin = Map.class))
+	@FormatMethod(
+			@Type(
+					subin = Map.class
+			))
 	protected void formatObject(Writer writer, Map<?, ?> object, JSONFormatPosition position) throws IOException {
 		if (DEBUGGING) {
 			Objects.requireNonNull(object, "object");
@@ -332,7 +341,6 @@ public class JSON extends Format implements Global {
 			}
 		}
 	}
-
 	/**
 	 * Format the given {@link Recurse}. To a {@link JSON} text. Then {@link Writer#append} it to the given {@link Writer}.
 	 *
@@ -343,7 +351,10 @@ public class JSON extends Format implements Global {
 	 * @throws IOException          when any I/O exception occurs
 	 * @throws NullPointerException if any of the given parameters is null
 	 */
-	@FormatMethod(@Type(in = Recurse.class))
+	@FormatMethod(
+			@Type(
+					in = Recurse.class
+			))
 	protected void formatRecurse(Writer writer, Object recurse, JSONFormatPosition position) throws IOException {
 		if (DEBUGGING) {
 			Objects.requireNonNull(recurse, "recurse");
@@ -359,7 +370,6 @@ public class JSON extends Format implements Global {
 			writer.append(val.RECURSE).append(String.valueOf(position.parents.size() - 1 - index));
 		}
 	}
-
 	/**
 	 * Format the given {@link CharSequence String}. To a {@link JSON} text. Then {@link Writer#append} it to the given {@link Writer}.
 	 *
@@ -369,7 +379,10 @@ public class JSON extends Format implements Global {
 	 * @throws IOException          when any I/O exception occurs
 	 * @throws NullPointerException if any of the given parameters is null
 	 */
-	@FormatMethod(@Type(subin = CharSequence.class))
+	@FormatMethod(
+			@Type(
+					subin = CharSequence.class
+			))
 	protected void formatString(Writer writer, CharSequence string) throws IOException {
 		if (DEBUGGING) {
 			Objects.requireNonNull(string, "string");
@@ -408,7 +421,6 @@ public class JSON extends Format implements Global {
 		reader.reset();
 		return r != -1;
 	}
-
 	/**
 	 * Check if the given string should be parsed as {@link Boolean} or not.
 	 *
@@ -429,7 +441,6 @@ public class JSON extends Format implements Global {
 		reader.reset();
 		return r != -1;
 	}
-
 	/**
 	 * Check if the remaining character on the given reader should be parsed as null or not.
 	 *
@@ -450,7 +461,6 @@ public class JSON extends Format implements Global {
 		reader.reset();
 		return r != -1;
 	}
-
 	/**
 	 * Check if the given string should be parsed as {@link Number} or not.
 	 *
@@ -472,7 +482,6 @@ public class JSON extends Format implements Global {
 
 		return r != -1;
 	}
-
 	/**
 	 * Check if the given string should be parsed as {@link Map Object} or not.
 	 *
@@ -494,7 +503,6 @@ public class JSON extends Format implements Global {
 
 		return r != -1;
 	}
-
 	/**
 	 * Check if the given string should be parsed as {@link Recurse} or not.
 	 *
@@ -515,7 +523,6 @@ public class JSON extends Format implements Global {
 		reader.reset();
 		return r != -1;
 	}
-
 	/**
 	 * Check if the given string should be parsed as {@link CharSequence String} or not.
 	 *
@@ -560,35 +567,59 @@ public class JSON extends Format implements Global {
 		WrapTracker tracker = new WrapTracker();
 		StringBuilder builder = new StringBuilder(DEFAULT_VALUE_LENGTH);
 
-		//skip '['
-		reader.skip(1);
+		int i = reader.read();
 
-		int i;
-		while ((i = reader.read()) > -1) {
+		//ignore whitespace
+		do {
+			if (i == -1)
+				throw new ParseException("empty reader");
+			if (!Character.isWhitespace(i))
+				break;
+
+			i = reader.read();
+		} while (true);
+
+		if (i == symbol.ARRAY_START)
+			i = reader.read();
+		else throw new ParseException("array not started!");
+
+		//stands for: delete previous if comment
+		boolean dpic = true;
+		do {
 			char point = (char) i;
 			if (tracker == null)
-				throw new ParseException("Collection closed before text end");
-			if (tracker.length() == 0)
+				if (Character.isWhitespace(i))
+					continue;
+				else throw new ParseException("array closed before text end");
+			if (!tracker.isWrapped())
 				switch (point) {
 					case symbol.ARRAY_END:
 						tracker = null;
 					case symbol.MEMBER_END:
 						AtomicReference<?> subBuffer = new AtomicReference<>();
-						position.parse(subBuffer, new StringReader(builder.toString()), null, null, buffer);
+						position.parse(subBuffer, new StringReader(builder.toString().trim()), null, null, buffer);
 						buffer.get().add(subBuffer.get());
 
 						builder = new StringBuilder(DEFAULT_VALUE_LENGTH);
 						continue;
 				}
 
-			builder.append(point);
 			tracker.append(point);
-		}
+			if (tracker.isComment()) {
+				if (dpic) {
+					builder.deleteCharAt(builder.length() - 1);
+					dpic = false;
+				}
+			} else if (!dpic) {
+				dpic = true;
+			} else {
+				builder.append(point);
+			}
+		} while ((i = reader.read()) != -1);
 
 		if (tracker != null)
 			throw new ParseException("Collection not closed");
 	}
-
 	/**
 	 * Parse the string from the given reader to an {@link Boolean}. Then set it to the given {@link AtomicReference buffer}.
 	 *
@@ -617,22 +648,26 @@ public class JSON extends Format implements Global {
 				throw new ParseException("Can't parse \"" + string + "\" as boolean");
 		}
 	}
-
 	/**
 	 * Set null to the given buffer.
 	 *
+	 * @param reader to read from
 	 * @param buffer to set the value to
 	 * @throws NullPointerException if any of the given parameters is null
+	 * @throws IOException          if any I/O exception occurred
 	 */
 	@ParseMethod(@Type(Void.class))
-	protected void parseNull(AtomicReference<Object> buffer) {
+	protected void parseNull(Reader reader, AtomicReference<Object> buffer) throws IOException {
 		if (DEBUGGING) {
 			Objects.requireNonNull(buffer, "buffer");
+
+			String string = Reader$.getRemaining(reader, val.NULL.length(), val.NULL.length());
+			if (!string.equalsIgnoreCase(val.NULL))
+				throw new ParseException("can't parse \"" + string + "\" as null");
 		}
 
 		buffer.set(null);
 	}
-
 	/**
 	 * Parse the string from the given reader to an {@link Number}. Then set it to the given {@link AtomicReference buffer}.
 	 *
@@ -654,7 +689,6 @@ public class JSON extends Format implements Global {
 		Number value = NumberFormat.getInstance(Locale.ENGLISH).parse(string);
 		buffer.set(value);
 	}
-
 	/**
 	 * Parse the string from the given reader to an {@link Map Object}. Then set it to the given {@link AtomicReference buffer}.
 	 *
@@ -677,15 +711,31 @@ public class JSON extends Format implements Global {
 		WrapTracker tracker = new WrapTracker();
 		StringBuilder builder = new StringBuilder(DEFAULT_VALUE_LENGTH), key = null;
 
-		//skip '{'
-		reader.skip(1);
+		int i = reader.read();
 
-		int i;
-		while ((i = reader.read()) > -1) {
+		//ignore whitespace
+		do {
+			if (i == -1)
+				throw new ParseException("empty reader");
+			if (!Character.isWhitespace(i))
+				break;
+
+			i = reader.read();
+		} while (true);
+
+		if (i == symbol.OBJECT_START)
+			i = reader.read();
+		else throw new ParseException("Object not started");
+
+		//stands for: delete previous if comment
+		boolean dpic = true;
+		do {
 			char point = (char) i;
 			if (tracker == null)
-				throw new ParseException("Map closed before text end");
-			if (tracker.length() == 0)
+				if (Character.isWhitespace(i))
+					continue;
+				else throw new ParseException("Object closed before text end");
+			if (!tracker.isWrapped())
 				switch (point) {
 					case symbol.DECLARATION:
 					case symbol.EQUATION:
@@ -702,8 +752,8 @@ public class JSON extends Format implements Global {
 
 						AtomicReference<?> kSubBuffer = new AtomicReference<>();
 						AtomicReference<?> vSubBuffer = new AtomicReference<>();
-						position.parse(kSubBuffer, new StringReader(key.toString()), null, null, buffer);
-						position.parse(vSubBuffer, new StringReader(builder.toString()), null, null, buffer);
+						position.parse(kSubBuffer, new StringReader(key.toString().trim()), null, null, buffer);
+						position.parse(vSubBuffer, new StringReader(builder.toString().trim()), null, null, buffer);
 						buffer.get().put(kSubBuffer.get(), vSubBuffer.get());
 
 						key = null;
@@ -712,13 +762,21 @@ public class JSON extends Format implements Global {
 				}
 
 			tracker.append(point);
-			builder.append(point);
-		}
+			if (tracker.isComment()) {
+				if (dpic) {
+					builder.deleteCharAt(builder.length() - 1);
+					dpic = false;
+				}
+			} else if (!dpic) {
+				dpic = true;
+			} else {
+				builder.append(point);
+			}
+		} while ((i = reader.read()) != -1);
 
 		if (tracker != null)
 			throw new ParseException("Map not closed");
 	}
-
 	/**
 	 * Parse the string from the given reader to an {@link Recurse}. Then set it to the given {@link AtomicReference buffer}.
 	 *
@@ -738,12 +796,11 @@ public class JSON extends Format implements Global {
 			Objects.requireNonNull(position, "position");
 		}
 
-		String string = Reader$.getRemaining(reader, DEFAULT_VALUE_LENGTH, DEFAULT_VALUE_LENGTH).trim().replaceFirst(val.RECURSE, "");
+		String string = Reader$.getRemaining(reader, DEFAULT_VALUE_LENGTH, DEFAULT_VALUE_LENGTH).trim().substring(val.RECURSE.length());
 		int index = NumberFormat.getInstance(Locale.ENGLISH).parse(string).intValue();
 		AtomicReference<?> value = position.parents.get(position.parents.size() - 1 - index);
 		buffer.set(value.get());
 	}
-
 	/**
 	 * Parse the string from the given reader to an {@link String}. Then set it to the given {@link AtomicReference buffer}.
 	 *

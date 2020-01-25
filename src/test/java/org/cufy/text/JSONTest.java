@@ -21,7 +21,22 @@ import java.util.Map;
 @SuppressWarnings("JavaDoc")
 public class JSONTest {
 	@Test
-	public void format_map_array_nested() {
+	public void comment_array_object_nested() {
+		String source = "[3, 5, {9/*{],23myComment*/=//myMultiLineComment\n\"abc\"}]";
+
+		//List<Object> list = JSONConverter.global.convert(source, ArrayList.class);
+		List<Object> list = (List<Object>) JSON.global.parse(source);
+
+		Assert.assertEquals("Wrong size", list.size(), 3);
+		Assert.assertEquals("Wrong 1st element", 3L, list.get(0));
+		Assert.assertEquals("Wrong 2nd element", 5L, list.get(1));
+
+		Map<Object, Object> map = (Map<Object, Object>) list.get(2);
+
+		Assert.assertEquals("Wrong element in the key 9", "abc", map.get(9L));
+	}
+	@Test
+	public void format_object_array_nested() {
 		Map<Object, Object> base = new HashMap<>(3);
 		Map<Object, Object> map = new HashMap<>(3);
 		base.put("map", map);
@@ -39,9 +54,8 @@ public class JSONTest {
 		String actual = JSON.global.format(base);
 		Assert.assertEquals("Wrong format", expected, actual);
 	}
-
 	@Test
-	public void parse_map_array_nested() {
+	public void parse_object_array_nested() {
 		Map<String, Map<String, List<Number>>> val = (Map<String, Map<String, List<Number>>>) JSON.global.parse("{\"map\":{\"number\":[9, 3, 5]}}");
 		Map<String, List<Number>> map = val.get("map");
 		List<Number> number = map.get("number");

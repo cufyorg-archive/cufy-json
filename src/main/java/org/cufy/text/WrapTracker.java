@@ -10,34 +10,40 @@
  */
 package org.cufy.text;
 
+import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Objects;
 
 /**
  * Helps to track string wrapping symbols.
  * <ul>
+ *     Closeables
  *     <li>Braces: {@link open#BRACE &#123;} {@link close#BRACE &#125;}</li>
  *     <li>Brackets: {@link open#BRACKET [} {@link close#BRACKET ]}</li>
  *     <li>Chevrons: {@link open#CHEVRON ⟨} {@link close#CHEVRON ⟩}</li>
  *     <li>Corner-brackets: {@link open#CORNER_BRACKET ｢} {@link close#CORNER_BRACKET ｣}</li>
  *     <li>Double-brackets: {@link open#DOUBLE_BRACKET ⟦} {@link close#DOUBLE_BRACKET ⟧}</li>
  *     <li>Double-guillemet: {@link open#DOUBLE_GUILLEMET «} {@link close#DOUBLE_GUILLEMET »}</li>
- *     <li>Double-quote: {@link open#DOUBLE_QUOTE "} {@link close#DOUBLE_QUOTE "}</li>
  *     <li>Guillemet: {@link open#GUILLEMET <} {@link close#GUILLEMET >}</li>
  *     <li>Parenthese: {@link open#PARENTHESE (} {@link close#PARENTHESE )}</li>
- *     <li>Quote: {@link open#QUOTE '} {@link close#QUOTE '}</li>
- *     <li>Star: {@link open#STAR *} {@link close#STAR *}</li>
- *     <li>Tilde: {@link open#TILDE ~} {@link close#TILDE ~}</li>
  *     <li>Tortoise: {@link open#TORTOISE 〔} {@link close#TORTOISE 〕}</li>
  *     <li>Under-brackets: {@link open#UNDER_BRACKET ⸤} {@link close#UNDER_BRACKET ⸥}</li>
- *     <li>Underscore: {@link open#UNDER_SCORE _} {@link close#UNDER_SCORE _}</li>
+ * </ul>
+ * <ul>
+ *     Marks
+ *     <li>Double-quote: {@link mark#DOUBLE_QUOTE "}</li>
+ *     <li>Quote: {@link mark#QUOTE '}</li>
+ *     <li>Star: {@link mark#STAR *}</li>
+ *     <li>Tilde: {@link mark#TILDE ~}</li>
+ *     <li>Underscore: {@link mark#UNDER_SCORE _}</li>
  * </ul>
  *
  * @author LSaferSE
- * @version 3 release (13-Dec-2019)
+ * @version 4 release (26-Jan-2020)
  * @see <a href="https://en.wikipedia.org/wiki/Bracket">wiki.org/wiki/Bracket</a>
  * @since 21-Nov-2019
  */
-public class WrapTracker {
+public class WrapTracker implements Appendable {
 	/**
 	 * Currently appended wraps. <br/>
 	 *
@@ -49,93 +55,145 @@ public class WrapTracker {
 	 * </pre>
 	 */
 	final protected ArrayList<Character> wraps = new ArrayList<>(50);
-
 	/**
 	 * Last wrap appended.
 	 *
 	 * @see #wraps
 	 */
 	protected char mode = ' ';
-
 	/**
-	 * Update the wraps list with the given character as part of the track.
-	 *
-	 * @param character to be appended
+	 * If we are expecting two characters.
 	 */
-	@SuppressWarnings("OverlyComplexMethod")
-	public void append(char character) {
-		switch (this.mode) {
-			case escape.BACK_SLASH:
-				this.unwrap();
-				break;
-			case open.QUOTE:
-			case open.DOUBLE_QUOTE:
-				switch (character) {
-					case escape.BACK_SLASH:
-						this.wrap(escape.BACK_SLASH);
-						break;
-					case close.QUOTE:
-					case close.DOUBLE_QUOTE:
-						if (character == this.getClose(this.mode))
-							this.unwrap();
-						break;
-				}
-				break;
-			case open.STAR:
-			case open.TILDE:
-			case open.UNDER_SCORE:
-				if (character == this.getClose(this.mode))
-					this.unwrap();
-				break;
-			default:
-				switch (character) {
-					case open.BRACE:
-					case open.BRACKET:
-					case open.CHEVRON:
-					case open.CORNER_BRACKET:
-					case open.DOUBLE_BRACKET:
-					case open.DOUBLE_GUILLEMET:
-					case open.DOUBLE_QUOTE:
-					case open.GUILLEMET:
-					case open.PARENTHESE:
-					case open.QUOTE:
-					case open.STAR:
-					case open.TILDE:
-					case open.TORTOISE:
-					case open.UNDER_BRACKET:
-					case open.UNDER_SCORE:
-						this.wrap(character);
-						break;
-					case close.BRACE:
-					case close.BRACKET:
-					case close.CHEVRON:
-					case close.CORNER_BRACKET:
-					case close.DOUBLE_BRACKET:
-					case close.DOUBLE_GUILLEMET:
-//					case close.DOUBLE_QUOTE:
-					case close.GUILLEMET:
-					case close.PARENTHESE:
-//					case close.QUOTE:
-//					case close.STAR:
-//					case close.TILDE:
-					case close.TORTOISE:
-					case close.UNDER_BRACKET:
-//					case close.UNDER_SCORE:
-						if (character == this.getClose(this.mode))
-							this.unwrap();
-						break;
-				}
-		}
-	}
+	protected char previous = ' ';
 
 	/**
 	 * Update the wraps list with the given sequence as part of the track.
 	 *
 	 * @param sequence to be appended
+	 * @return this
+	 * @throws NullPointerException if the given sequence is null
 	 */
-	public void append(CharSequence sequence) {
+	@Override
+	public WrapTracker append(CharSequence sequence) {
+		Objects.requireNonNull(sequence, "sequence");
 		for (Character character : sequence.toString().toCharArray())
 			this.append(character);
+
+		return this;
+	}
+	@Override
+	public WrapTracker append(CharSequence csq, int start, int end) throws IOException {
+		Objects.requireNonNull(csq, "csq");
+
+		int length = csq.length();
+
+		if (start < 0 || end < 0 || length < start || length < end)
+			throw new IndexOutOfBoundsException();
+
+		for (int i = start; i < end; i++)
+			this.append(csq.charAt(i));
+
+		return this;
+	}
+	/**
+	 * Update the wraps list with the given character as part of the track.
+	 *
+	 * @param character to be appended
+	 * @return this
+	 */
+	@Override
+	public WrapTracker append(char character) {
+		char previous = this.previous;
+		this.previous = character;
+
+		switch (this.mode) {
+			case comment._SLASH_SLASH:
+				if (character == mark.NEW_LINE)
+					this.unwrap();
+				return this;
+			//=======================
+			case comment._SLASH_STAR:
+				if (previous == mark.STAR && character == mark.SLASH)
+					this.unwrap();
+				return this;
+			//=======================
+			case mark.BACK_SLASH:
+				this.unwrap();
+				return this;
+			//=======================
+			case mark.SLASH:
+				if (character == mark.SLASH) {
+					this.unwrap();
+					this.wrap(comment._SLASH_SLASH);
+				} else if (character == mark.STAR) {
+					this.unwrap();
+					this.wrap(comment._SLASH_STAR);
+				}
+				return this;
+			//=======================
+		}
+		switch (character) {
+			case mark.DOUBLE_QUOTE:
+			case mark.QUOTE:
+			case mark.STAR:
+			case mark.TILDE:
+			case mark.UNDER_SCORE:
+				if (character == this.mode)
+					this.unwrap();
+				else this.wrap(character);
+				return this;
+			//=======================
+			case mark.BACK_SLASH:
+			case mark.SLASH:
+				//
+			case open.BRACE:
+			case open.BRACKET:
+			case open.CHEVRON:
+			case open.CORNER_BRACKET:
+			case open.DOUBLE_BRACKET:
+			case open.DOUBLE_GUILLEMET:
+			case open.GUILLEMET:
+			case open.PARENTHESE:
+			case open.TORTOISE:
+			case open.UNDER_BRACKET:
+				this.wrap(character);
+				return this;
+			//=======================
+			case close.BRACE:
+			case close.BRACKET:
+			case close.CHEVRON:
+			case close.CORNER_BRACKET:
+			case close.DOUBLE_BRACKET:
+			case close.DOUBLE_GUILLEMET:
+			case close.GUILLEMET:
+			case close.PARENTHESE:
+			case close.TORTOISE:
+			case close.UNDER_BRACKET:
+				if (character == this.getCloseFromOpen(this.mode))
+					this.unwrap();
+				return this;
+			//=======================
+		}
+
+		return this;
+	}
+
+	/**
+	 * Returns true if the current last wrap is comment.
+	 *
+	 * @return whether the current wrap is comment or not
+	 */
+	public boolean isComment() {
+		return this.mode == comment._SLASH_SLASH || this.mode == comment._SLASH_STAR;
+	}
+
+	/**
+	 * Returns true if any wrap detected currently.
+	 *
+	 * @return whether any wrap detected currently
+	 */
+	public boolean isWrapped() {
+		return this.wraps.size() != 0;
 	}
 
 	/**
@@ -153,9 +211,7 @@ public class WrapTracker {
 	 * @param ch to get a close symbol for
 	 * @return a close symbol for the given open symbol
 	 */
-	@SuppressWarnings("OverlyComplexMethod")
-	protected char getClose(char ch) {
-		//noinspection DuplicatedCode
+	protected char getCloseFromOpen(char ch) {
 		switch (ch) {
 			case open.BRACE:
 				return close.BRACE;
@@ -169,24 +225,14 @@ public class WrapTracker {
 				return close.DOUBLE_BRACKET;
 			case open.DOUBLE_GUILLEMET:
 				return close.DOUBLE_GUILLEMET;
-			case open.DOUBLE_QUOTE:
-				return close.DOUBLE_QUOTE;
 			case open.GUILLEMET:
 				return close.GUILLEMET;
 			case open.PARENTHESE:
 				return close.PARENTHESE;
-			case open.QUOTE:
-				return close.QUOTE;
-			case open.STAR:
-				return close.STAR;
-			case open.TILDE:
-				return close.TILDE;
 			case open.TORTOISE:
 				return close.TORTOISE;
 			case open.UNDER_BRACKET:
 				return close.UNDER_BRACKET;
-			case open.UNDER_SCORE:
-				return close.UNDER_SCORE;
 			default:
 				throw new IllegalArgumentException(String.valueOf(ch));
 		}
@@ -198,9 +244,7 @@ public class WrapTracker {
 	 * @param ch to get an open symbol for
 	 * @return an open symbol for the given close symbol
 	 */
-	@SuppressWarnings("OverlyComplexMethod")
-	protected char getOpen(char ch) {
-		//noinspection DuplicatedCode
+	protected char getOpenFromClose(char ch) {
 		switch (ch) {
 			case close.BRACE:
 				return open.BRACE;
@@ -214,24 +258,14 @@ public class WrapTracker {
 				return open.DOUBLE_BRACKET;
 			case close.DOUBLE_GUILLEMET:
 				return open.DOUBLE_GUILLEMET;
-			case close.DOUBLE_QUOTE:
-				return open.DOUBLE_QUOTE;
 			case close.GUILLEMET:
 				return open.GUILLEMET;
 			case close.PARENTHESE:
 				return open.PARENTHESE;
-			case close.QUOTE:
-				return open.QUOTE;
-			case close.STAR:
-				return open.STAR;
-			case close.TILDE:
-				return open.TILDE;
 			case close.TORTOISE:
 				return open.TORTOISE;
 			case close.UNDER_BRACKET:
 				return open.UNDER_BRACKET;
-			case close.UNDER_SCORE:
-				return open.UNDER_SCORE;
 			default:
 				throw new IllegalArgumentException(String.valueOf(ch));
 		}
@@ -286,10 +320,6 @@ public class WrapTracker {
 		 */
 		final public static char DOUBLE_GUILLEMET = 187;//'»'
 		/**
-		 * Init or end double quotation marks.
-		 */
-		final public static char DOUBLE_QUOTE = '"';
-		/**
 		 * End guillemets.
 		 */
 		final public static char GUILLEMET = '>';
@@ -298,9 +328,71 @@ public class WrapTracker {
 		 */
 		final public static char PARENTHESE = ')';
 		/**
+		 * End tortoise.
+		 */
+		final public static char TORTOISE = 12309;//'〕'
+		/**
+		 * End under brackets.
+		 */
+		final public static char UNDER_BRACKET = 11813;//'⸥'
+
+		/**
+		 * No instance for you!.
+		 */
+		private close() {
+			throw new AssertionError("No instance for you");
+		}
+	}
+
+	/**
+	 * Symbols for escaping.
+	 */
+	final public static class comment {
+		/**
+		 * Represents "\\".
+		 */
+		final public static char _SLASH_SLASH = '0';
+		/**
+		 * Represents "\*".
+		 */
+		final public static char _SLASH_STAR = '1';
+
+		/**
+		 * No instance for you!.
+		 */
+		private comment() {
+			throw new AssertionError("No instance for you");
+		}
+	}
+
+	/**
+	 * Symbols for open and close.
+	 */
+	final public static class mark {
+		/**
+		 * Init back slash.
+		 *
+		 * @apiNote escapes the next character.
+		 */
+		final public static char BACK_SLASH = '\\';
+		/**
+		 * Init or end double quotation marks.
+		 */
+		final public static char DOUBLE_QUOTE = '"';
+		/**
+		 * Init new line.
+		 */
+		final public static char NEW_LINE = '\n';
+		/**
 		 * Init or end quotation marks.
 		 */
 		final public static char QUOTE = '\'';
+		/**
+		 * Init a slash.
+		 *
+		 * @apiNote escapes until the next '*<code>/</code>' if the next character is '*'. Or until the next '\n' if the next character is '\'.
+		 */
+		final public static char SLASH = '/';
 		/**
 		 * Init or end star marks.
 		 */
@@ -310,14 +402,6 @@ public class WrapTracker {
 		 */
 		final public static char TILDE = '~';
 		/**
-		 * End tortoise.
-		 */
-		final public static char TORTOISE = 12309;//'〕'
-		/**
-		 * End under brackets.
-		 */
-		final public static char UNDER_BRACKET = 11813;//'⸥'
-		/**
 		 * Init or end under score.
 		 */
 		final public static char UNDER_SCORE = '_';
@@ -325,25 +409,8 @@ public class WrapTracker {
 		/**
 		 * No instance for you!.
 		 */
-		private close() {
-			throw new AssertionError();
-		}
-	}
-
-	/**
-	 * Escape symbols used by this class.
-	 */
-	final public static class escape {
-		/**
-		 * Escapes the next character.
-		 */
-		final public static char BACK_SLASH = '\\';
-
-		/**
-		 * No instance for you!.
-		 */
-		private escape() {
-			throw new AssertionError();
+		private mark() {
+			throw new AssertionError("No instance for you");
 		}
 	}
 
@@ -376,10 +443,6 @@ public class WrapTracker {
 		 */
 		final public static char DOUBLE_GUILLEMET = 171;//'«'
 		/**
-		 * Init or end double quotation marks.
-		 */
-		final public static char DOUBLE_QUOTE = '"';
-		/**
 		 * Init guillemets.
 		 */
 		final public static char GUILLEMET = '<';
@@ -388,18 +451,6 @@ public class WrapTracker {
 		 */
 		final public static char PARENTHESE = '(';
 		/**
-		 * Init or end quotation marks.
-		 */
-		final public static char QUOTE = '\'';
-		/**
-		 * Init or end star marks.
-		 */
-		final public static char STAR = '*';
-		/**
-		 * Init or end tilde.
-		 */
-		final public static char TILDE = '~';
-		/**
 		 * Init tortoise.
 		 */
 		final public static char TORTOISE = 12308;//'〔'
@@ -407,16 +458,12 @@ public class WrapTracker {
 		 * Init under brackets.
 		 */
 		final public static char UNDER_BRACKET = 11812;//'⸤'
-		/**
-		 * Init or end under score.
-		 */
-		final public static char UNDER_SCORE = '_';
 
 		/**
 		 * No instance for you!.
 		 */
 		private open() {
-			throw new AssertionError();
+			throw new AssertionError("No instance for you");
 		}
 	}
 }
