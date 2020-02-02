@@ -98,7 +98,8 @@ import java.util.concurrent.atomic.AtomicReference;
  * </ul>
  *
  * @author LSaferSE
- * @version 11 release (25-Jan-2020)
+ * @version 12 release (02-Feb-2020)
+ * @apiNote you can change the syntax of this (by inheriting this)
  * @see <a href="http://www.json.org/">json.org</a> for more about JSON
  * @since 09-Jul-19
  */
@@ -106,7 +107,7 @@ public class JSON extends Format implements Global {
 	/**
 	 * The global instance to avoid unnecessary instancing.
 	 */
-	final public static JSON global = new JSON();
+	final public static JSON global = JSON.newInstance();
 
 	/**
 	 * The expected number of members on objects or arrays.
@@ -127,12 +128,66 @@ public class JSON extends Format implements Global {
 	 */
 	protected int DEFAULT_WHITE_SPACE_LENGTH;
 
-	{
-		DEBUGGING = false;
-		DEFAULT_MEMBERS_COUNT = 10;
-		DEFAULT_NESTING_DEPTH = 5;
-		DEFAULT_VALUE_LENGTH = 20;
-		DEFAULT_WHITE_SPACE_LENGTH = 20;
+	/**
+	 * The format instance to format/parse numbers with.
+	 */
+	protected NumberFormat NUMBER_FORMAT;
+	/**
+	 * The relationships between strings and theirs escapes.
+	 */
+	protected Map<String, String> STRING_ESCAPABLES;
+	/**
+	 * The symbols of this.
+	 */
+	protected Syntax SYNTAX;
+	/**
+	 * The literal symbols relationships for {@link SyntaxTracker}.
+	 *
+	 * @apiNote final after initialization
+	 */
+	protected Map<String, String> SYNTAX_LITERAL;
+	/**
+	 * The nestable symbols relationships for {@link SyntaxTracker}.
+	 *
+	 * @apiNote final after initialization
+	 */
+	protected Map<String, String> SYNTAX_NESTABLE;
+
+	/**
+	 * Get a new {@link JSON} instance, With the default syntax.
+	 *
+	 * @return a new JSON instance with the default syntax
+	 */
+	public static JSON newInstance() {
+		JSON json = new JSON();
+
+		json.DEBUGGING = false;
+		json.DEFAULT_MEMBERS_COUNT = 10;
+		json.DEFAULT_NESTING_DEPTH = 5;
+		json.DEFAULT_VALUE_LENGTH = 20;
+		json.DEFAULT_WHITE_SPACE_LENGTH = 20;
+
+		json.NUMBER_FORMAT = NumberFormat.getInstance(Locale.ENGLISH);
+
+		json.STRING_ESCAPABLES = new HashMap<>();
+		json.STRING_ESCAPABLES.put("\\", "\\\\");
+		json.STRING_ESCAPABLES.put("\"", "\\\"");
+		json.STRING_ESCAPABLES.put("\n", "\\\n");
+		json.STRING_ESCAPABLES.put("\r", "\\\r");
+		json.STRING_ESCAPABLES.put("\t", "\\\t");
+
+		json.SYNTAX = new Syntax();
+
+		json.SYNTAX_NESTABLE = new HashMap<>();
+		json.SYNTAX_NESTABLE.put(json.SYNTAX.OBJECT_START, json.SYNTAX.OBJECT_END);
+		json.SYNTAX_NESTABLE.put(json.SYNTAX.ARRAY_START, json.SYNTAX.ARRAY_END);
+
+		json.SYNTAX_LITERAL = new HashMap<>();
+		json.SYNTAX_LITERAL.put(json.SYNTAX.STRING_START, json.SYNTAX.STRING_END);
+		json.SYNTAX_LITERAL.put(json.SYNTAX.COMMENT_START, json.SYNTAX.COMMENT_END);
+		json.SYNTAX_LITERAL.put(json.SYNTAX.LINE_COMMENT_START, json.SYNTAX.LINE_COMMENT_END);
+
+		return json;
 	}
 
 	@Override
@@ -195,27 +250,27 @@ public class JSON extends Format implements Global {
 		Iterator<?> iterator = array instanceof Collection ? ((Collection) array).iterator() : Array$.iterator0(array);
 
 		if (!iterator.hasNext()) {
-			writer.append(symbol.ARRAY_START)
-					.append("\n")
+			writer.append(SYNTAX.ARRAY_START)
+					.append(SYNTAX.LINE)
 					.append(position.tab)
-					.append(symbol.ARRAY_END);
+					.append(SYNTAX.ARRAY_END);
 		} else {
-			writer.append(symbol.ARRAY_START)
-					.append("\n")
+			writer.append(SYNTAX.ARRAY_START)
+					.append(SYNTAX.LINE)
 					.append(position.shift);
 
 			while (true) {
 				position.format(writer, iterator.next(), null, null, array, null, null);
 
 				if (!iterator.hasNext()) {
-					writer.append("\n")
+					writer.append(SYNTAX.LINE)
 							.append(position.tab)
-							.append(symbol.ARRAY_END);
+							.append(SYNTAX.ARRAY_END);
 					return;
 				}
 
-				writer.append(symbol.MEMBER_END)
-						.append("\n")
+				writer.append(SYNTAX.MEMBER_END)
+						.append(SYNTAX.LINE)
 						.append(position.shift);
 			}
 		}
@@ -240,10 +295,10 @@ public class JSON extends Format implements Global {
 			Objects.requireNonNull(writer, "writer");
 		}
 
-		writer.append(bool ? val.TRUE : val.FALSE);
+		writer.append(bool ? SYNTAX.TRUE : SYNTAX.FALSE);
 	}
 	/**
-	 * Append {@link val#NULL} to the given writer.
+	 * Append null to the given writer.
 	 *
 	 * @param writer to append to
 	 * @throws FormatException      when any formatting errors occurs
@@ -259,7 +314,7 @@ public class JSON extends Format implements Global {
 			Objects.requireNonNull(writer, "writer");
 		}
 
-		writer.append(val.NULL);
+		writer.append(SYNTAX.NULL);
 	}
 	/**
 	 * Format the given {@link Number}. To a {@link JSON} text. Then {@link Writer#append} it to the given {@link Writer}.
@@ -286,7 +341,7 @@ public class JSON extends Format implements Global {
 			Objects.requireNonNull(writer, "writer");
 		}
 
-		writer.append(NumberFormat.getInstance(Locale.ENGLISH).format(number));
+		writer.append(NUMBER_FORMAT.format(number));
 	}
 	/**
 	 * Format the given {@link Map Object}. To a {@link JSON} text. Then {@link Writer#append} it to the given {@link Writer}.
@@ -312,31 +367,31 @@ public class JSON extends Format implements Global {
 		Iterator<? extends Map.Entry<?, ?>> iterator = object.entrySet().iterator();
 
 		if (!iterator.hasNext()) {
-			writer.append(symbol.OBJECT_START)
-					.append("\n")
+			writer.append(SYNTAX.OBJECT_START)
+					.append(SYNTAX.LINE)
 					.append(position.tab)
-					.append(symbol.OBJECT_END);
+					.append(SYNTAX.OBJECT_END);
 		} else {
-			writer.append(symbol.OBJECT_START)
-					.append("\n")
+			writer.append(SYNTAX.OBJECT_START)
+					.append(SYNTAX.LINE)
 					.append(position.shift);
 
 			while (true) {
 				Map.Entry<?, ?> entry = iterator.next();
 
 				position.format(writer, entry.getKey(), null, null, object, null, null);
-				writer.append(symbol.DECLARATION);
+				writer.append(SYNTAX.DECLARATION);
 				position.format(writer, entry.getValue(), null, null, object, null, null);
 
 				if (!iterator.hasNext()) {
-					writer.append("\n")
+					writer.append(SYNTAX.LINE)
 							.append(position.tab)
-							.append(symbol.OBJECT_END);
+							.append(SYNTAX.OBJECT_END);
 					return;
 				}
 
-				writer.append(symbol.MEMBER_END)
-						.append("\n")
+				writer.append(SYNTAX.MEMBER_END)
+						.append(SYNTAX.LINE)
 						.append(position.shift);
 			}
 		}
@@ -367,7 +422,7 @@ public class JSON extends Format implements Global {
 		if (index == -1) {
 			throw new IllegalArgumentException("Not recurse!: " + recurse);
 		} else {
-			writer.append(val.RECURSE).append(String.valueOf(position.parents.size() - 1 - index));
+			writer.append(SYNTAX.RECURSE).append(String.valueOf(position.parents.size() - 1 - index));
 		}
 	}
 	/**
@@ -389,16 +444,14 @@ public class JSON extends Format implements Global {
 			Objects.requireNonNull(writer, "writer");
 		}
 
-		writer.append(symbol.STRING_START)
-				.append(string.toString()
-						.replace("\"", "\\\"")
-						.replace("\\", "\\\\")
-						.replace("\b", "\\\b")
-						.replace("\f", "\\f")
-						.replace("\n", "\\n")
-						.replace("\r", "\\r")
-						.replace("\t", "\\t"))
-				.append(symbol.STRING_END);
+		String value = string.toString();
+
+		for (Map.Entry<String, String> escapable : STRING_ESCAPABLES.entrySet())
+			value = value.replace(escapable.getKey(), escapable.getValue());
+
+		writer.append(SYNTAX.STRING_START)
+				.append(value)
+				.append(SYNTAX.STRING_END);
 	}
 
 	/**
@@ -417,7 +470,7 @@ public class JSON extends Format implements Global {
 		}
 
 		reader.mark(DEFAULT_WHITE_SPACE_LENGTH + 1);
-		int r = Reader$.isRemainingEquals(reader, true, false, false, new String(new char[]{symbol.ARRAY_START}));
+		int r = Reader$.isRemainingEquals(reader, true, false, false, SYNTAX.ARRAY_START);
 		reader.reset();
 		return r != -1;
 	}
@@ -436,10 +489,26 @@ public class JSON extends Format implements Global {
 			Objects.requireNonNull(reader, "reader");
 		}
 
-		reader.mark(DEFAULT_WHITE_SPACE_LENGTH + Math.max(val.TRUE.length(), val.FALSE.length()));
-		int r = Reader$.isRemainingEquals(reader, true, true, true, val.TRUE, val.FALSE);
+		reader.mark(DEFAULT_WHITE_SPACE_LENGTH + Math.max(SYNTAX.TRUE.length(), SYNTAX.FALSE.length()));
+		int r = Reader$.isRemainingEquals(reader, true, true, true, SYNTAX.TRUE, SYNTAX.FALSE);
 		reader.reset();
 		return r != -1;
+	}
+	/**
+	 * Check if the given tracker is in a comment literal or not.
+	 *
+	 * @param tracker to check for
+	 * @return if the given tracker is in comment literal or not
+	 * @throws NullPointerException if the given tracker is null
+	 */
+	@StaticMethod
+	protected boolean isInComment(SyntaxTracker tracker) {
+		if (DEBUGGING) {
+			Objects.requireNonNull(tracker, "tracker");
+		}
+
+		String pos = tracker.getUnwrap();
+		return pos.equals(SYNTAX.COMMENT_END) || pos.equals(SYNTAX.LINE_COMMENT_END);
 	}
 	/**
 	 * Check if the remaining character on the given reader should be parsed as null or not.
@@ -456,8 +525,8 @@ public class JSON extends Format implements Global {
 			Objects.requireNonNull(reader, "reader");
 		}
 
-		reader.mark(DEFAULT_WHITE_SPACE_LENGTH + val.NULL.length());
-		int r = Reader$.isRemainingEquals(reader, true, true, true, val.NULL);
+		reader.mark(DEFAULT_WHITE_SPACE_LENGTH + SYNTAX.NULL.length());
+		int r = Reader$.isRemainingEquals(reader, true, true, true, SYNTAX.NULL);
 		reader.reset();
 		return r != -1;
 	}
@@ -498,7 +567,7 @@ public class JSON extends Format implements Global {
 		}
 
 		reader.mark(DEFAULT_WHITE_SPACE_LENGTH + 1);
-		int r = Reader$.isRemainingEquals(reader, true, false, false, new String(new char[]{symbol.OBJECT_START}));
+		int r = Reader$.isRemainingEquals(reader, true, false, false, SYNTAX.OBJECT_START);
 		reader.reset();
 
 		return r != -1;
@@ -518,8 +587,8 @@ public class JSON extends Format implements Global {
 			Objects.requireNonNull(reader, "reader");
 		}
 
-		reader.mark(DEFAULT_WHITE_SPACE_LENGTH + val.RECURSE.length());
-		int r = Reader$.isRemainingEquals(reader, true, true, true, val.RECURSE);
+		reader.mark(DEFAULT_WHITE_SPACE_LENGTH + SYNTAX.RECURSE.length());
+		int r = Reader$.isRemainingEquals(reader, true, true, true, SYNTAX.RECURSE);
 		reader.reset();
 		return r != -1;
 	}
@@ -539,7 +608,7 @@ public class JSON extends Format implements Global {
 		}
 
 		reader.mark(DEFAULT_WHITE_SPACE_LENGTH + 1);
-		int r = Reader$.isRemainingEquals(reader, true, false, false, new String(new char[]{symbol.STRING_START}));
+		int r = Reader$.isRemainingEquals(reader, true, false, false, SYNTAX.STRING_START);
 		reader.reset();
 
 		return r != -1;
@@ -564,60 +633,54 @@ public class JSON extends Format implements Global {
 		}
 
 		buffer.set(new ArrayList<>(DEFAULT_MEMBERS_COUNT));
-		WrapTracker tracker = new WrapTracker();
+		SyntaxTracker tracker = new SyntaxTracker(SYNTAX_NESTABLE, SYNTAX_LITERAL);
 		StringBuilder builder = new StringBuilder(DEFAULT_VALUE_LENGTH);
+		StringBuilder points = new StringBuilder(DEFAULT_VALUE_LENGTH);
+		boolean closed = false;
 
-		int i = reader.read();
+		if (Reader$.isRemainingEquals(reader, true, false, false, SYNTAX.ARRAY_START) != 0)
+			throw new ParseException("array not started");
 
-		//ignore whitespace
-		do {
-			if (i == -1)
-				throw new ParseException("empty reader");
-			if (!Character.isWhitespace(i))
-				break;
-
-			i = reader.read();
-		} while (true);
-
-		if (i == symbol.ARRAY_START)
-			i = reader.read();
-		else throw new ParseException("array not started!");
-
-		//stands for: delete previous if comment
+//		//stands for: delete previous if comment
 		boolean dpic = true;
-		do {
+		int i;
+		while ((i = reader.read()) != -1) {
 			char point = (char) i;
-			if (tracker == null)
+
+			if (closed)
 				if (Character.isWhitespace(i))
 					continue;
 				else throw new ParseException("array closed before text end");
-			if (!tracker.isWrapped())
-				switch (point) {
-					case symbol.ARRAY_END:
-						tracker = null;
-					case symbol.MEMBER_END:
-						AtomicReference<?> subBuffer = new AtomicReference<>();
-						position.parse(subBuffer, new StringReader(builder.toString().trim()), null, null, buffer);
-						buffer.get().add(subBuffer.get());
+			if (tracker.length() == 0) {
+				String past = points.append(point).toString();
 
-						builder = new StringBuilder(DEFAULT_VALUE_LENGTH);
-						continue;
+				if ((closed = past.endsWith(SYNTAX.ARRAY_END)) || past.endsWith(SYNTAX.MEMBER_END)) {
+					AtomicReference<?> subBuffer = new AtomicReference<>();
+					position.parse(subBuffer, new StringReader(builder.toString().trim()), null, null, buffer);
+					buffer.get().add(subBuffer.get());
+
+					builder = new StringBuilder(DEFAULT_VALUE_LENGTH);
+					points = new StringBuilder(DEFAULT_VALUE_LENGTH);
+					continue;
 				}
+			} else {
+				points = new StringBuilder(DEFAULT_VALUE_LENGTH);
+			}
 
 			tracker.append(point);
-			if (tracker.isComment()) {
+
+			if (isInComment(tracker)) {
 				if (dpic) {
-					builder.deleteCharAt(builder.length() - 1);
+					builder.delete(builder.length() - 1, builder.length());
 					dpic = false;
 				}
-			} else if (!dpic) {
-				dpic = true;
 			} else {
+				dpic = true;
 				builder.append(point);
 			}
-		} while ((i = reader.read()) != -1);
+		}
 
-		if (tracker != null)
+		if (!closed)
 			throw new ParseException("Collection not closed");
 	}
 	/**
@@ -636,16 +699,14 @@ public class JSON extends Format implements Global {
 			Objects.requireNonNull(buffer, "buffer");
 		}
 
-		String string = Reader$.getRemaining(reader, Math.max(val.TRUE.length(), val.FALSE.length())).trim();
-		switch (string) {
-			case val.TRUE:
-				buffer.set(true);
-				break;
-			case val.FALSE:
-				buffer.set(false);
-				break;
-			default:
-				throw new ParseException("Can't parse \"" + string + "\" as boolean");
+		String string = Reader$.getRemaining(reader, Math.max(SYNTAX.TRUE.length(), SYNTAX.FALSE.length())).trim();
+
+		if (SYNTAX.TRUE.equals(string)) {
+			buffer.set(true);
+		} else if (SYNTAX.FALSE.equals(string)) {
+			buffer.set(false);
+		} else {
+			throw new ParseException("Can't parse \"" + string + "\" as boolean");
 		}
 	}
 	/**
@@ -661,8 +722,8 @@ public class JSON extends Format implements Global {
 		if (DEBUGGING) {
 			Objects.requireNonNull(buffer, "buffer");
 
-			String string = Reader$.getRemaining(reader, val.NULL.length(), val.NULL.length());
-			if (!string.equalsIgnoreCase(val.NULL))
+			String string = Reader$.getRemaining(reader, SYNTAX.NULL.length(), SYNTAX.NULL.length());
+			if (!string.equalsIgnoreCase(SYNTAX.NULL))
 				throw new ParseException("can't parse \"" + string + "\" as null");
 		}
 
@@ -686,7 +747,7 @@ public class JSON extends Format implements Global {
 		}
 
 		String string = Reader$.getRemaining(reader, DEFAULT_VALUE_LENGTH, DEFAULT_VALUE_LENGTH).trim();
-		Number value = NumberFormat.getInstance(Locale.ENGLISH).parse(string);
+		Number value = NUMBER_FORMAT.parse(string);
 		buffer.set(value);
 	}
 	/**
@@ -708,73 +769,69 @@ public class JSON extends Format implements Global {
 		}
 
 		buffer.set(new HashMap<>(DEFAULT_MEMBERS_COUNT));
-		WrapTracker tracker = new WrapTracker();
-		StringBuilder builder = new StringBuilder(DEFAULT_VALUE_LENGTH), key = null;
+		SyntaxTracker tracker = new SyntaxTracker(SYNTAX_NESTABLE, SYNTAX_LITERAL);
+		StringBuilder builder = new StringBuilder(DEFAULT_VALUE_LENGTH);
+		StringBuilder key = null;
+		StringBuilder points = new StringBuilder(DEFAULT_VALUE_LENGTH);
+		boolean closed = false;
 
-		int i = reader.read();
-
-		//ignore whitespace
-		do {
-			if (i == -1)
-				throw new ParseException("empty reader");
-			if (!Character.isWhitespace(i))
-				break;
-
-			i = reader.read();
-		} while (true);
-
-		if (i == symbol.OBJECT_START)
-			i = reader.read();
-		else throw new ParseException("Object not started");
+		if (Reader$.isRemainingEquals(reader, true, false, false, SYNTAX.OBJECT_START) != 0)
+			throw new ParseException("Object not started");
 
 		//stands for: delete previous if comment
 		boolean dpic = true;
-		do {
+		int i;
+		while ((i = reader.read()) != -1) {
 			char point = (char) i;
-			if (tracker == null)
+
+			if (closed)
 				if (Character.isWhitespace(i))
 					continue;
 				else throw new ParseException("Object closed before text end");
-			if (!tracker.isWrapped())
-				switch (point) {
-					case symbol.DECLARATION:
-					case symbol.EQUATION:
-						if (key != null)
-							throw new ParseException("Two equation symbol");
-						key = builder;
-						builder = new StringBuilder(DEFAULT_VALUE_LENGTH);
-						continue;
-					case symbol.OBJECT_END:
-						tracker = null;
-					case symbol.MEMBER_END:
-						if (key == null)
-							throw new ParseException("No equation symbol");
+			if (tracker.length() == 0) {
+				String past = points.append(point).toString();
 
-						AtomicReference<?> kSubBuffer = new AtomicReference<>();
-						AtomicReference<?> vSubBuffer = new AtomicReference<>();
-						position.parse(kSubBuffer, new StringReader(key.toString().trim()), null, null, buffer);
-						position.parse(vSubBuffer, new StringReader(builder.toString().trim()), null, null, buffer);
-						buffer.get().put(kSubBuffer.get(), vSubBuffer.get());
+				if (past.endsWith(SYNTAX.DECLARATION) || past.endsWith(SYNTAX.EQUATION)) {
+					if (key != null)
+						throw new ParseException("Two equation symbol");
+					key = builder;
 
-						key = null;
-						builder = new StringBuilder(DEFAULT_VALUE_LENGTH);
-						continue;
+					builder = new StringBuilder(DEFAULT_VALUE_LENGTH);
+					points = new StringBuilder(DEFAULT_VALUE_LENGTH);
+					continue;
+				} else if ((closed = past.endsWith(SYNTAX.OBJECT_END)) || past.endsWith(SYNTAX.MEMBER_END)) {
+					if (key == null)
+						throw new ParseException("No equation symbol");
+
+					AtomicReference<?> kSubBuffer = new AtomicReference<>();
+					AtomicReference<?> vSubBuffer = new AtomicReference<>();
+					position.parse(kSubBuffer, new StringReader(key.toString().trim()), null, null, buffer);
+					position.parse(vSubBuffer, new StringReader(builder.toString().trim()), null, null, buffer);
+					buffer.get().put(kSubBuffer.get(), vSubBuffer.get());
+
+					key = null;
+					builder = new StringBuilder(DEFAULT_VALUE_LENGTH);
+					points = new StringBuilder(DEFAULT_VALUE_LENGTH);
+					continue;
 				}
+			} else {
+				points = new StringBuilder(DEFAULT_VALUE_LENGTH);
+			}
 
 			tracker.append(point);
-			if (tracker.isComment()) {
+
+			if (isInComment(tracker)) {
 				if (dpic) {
 					builder.deleteCharAt(builder.length() - 1);
 					dpic = false;
 				}
-			} else if (!dpic) {
-				dpic = true;
 			} else {
+				dpic = true;
 				builder.append(point);
 			}
-		} while ((i = reader.read()) != -1);
+		}
 
-		if (tracker != null)
+		if (!closed)
 			throw new ParseException("Map not closed");
 	}
 	/**
@@ -796,8 +853,9 @@ public class JSON extends Format implements Global {
 			Objects.requireNonNull(position, "position");
 		}
 
-		String string = Reader$.getRemaining(reader, DEFAULT_VALUE_LENGTH, DEFAULT_VALUE_LENGTH).trim().substring(val.RECURSE.length());
-		int index = NumberFormat.getInstance(Locale.ENGLISH).parse(string).intValue();
+		int i = DEFAULT_VALUE_LENGTH + SYNTAX.RECURSE.length();
+		String string = Reader$.getRemaining(reader, i, i).trim().substring(SYNTAX.RECURSE.length());
+		int index = NUMBER_FORMAT.parse(string).intValue();
 		AtomicReference<?> value = position.parents.get(position.parents.size() - 1 - index);
 		buffer.set(value.get());
 	}
@@ -818,83 +876,96 @@ public class JSON extends Format implements Global {
 		}
 
 		String string = Reader$.getRemaining(reader, DEFAULT_VALUE_LENGTH, DEFAULT_VALUE_LENGTH).trim();
-		String value = string.substring(1, string.length() - 1)
-				.replace("\\\\", "\\")
-				.replace("\\\"", "\"")
-				.replace("\\b", "\b")
-				.replace("\\f", "\f")
-				.replace("\\n", "\n")
-				.replace("\\r", "\r")
-				.replace("\\t", "\t");
+		String value = string.substring(SYNTAX.STRING_START.length(), string.length() - SYNTAX.STRING_END.length());
+
+		for (Map.Entry<String, String> escapable : STRING_ESCAPABLES.entrySet())
+			value.replace(escapable.getValue(), escapable.getKey());
+
 		buffer.set(value);
 	}
 
 	/**
-	 * JSON symbols.
+	 * A structure holding the symbols of a JSON formatter.
+	 *
+	 * @implSpec all values should be used as final
 	 */
-	final public static class symbol {
+	protected static class Syntax {
 		/**
 		 * Array end char on JSON.
 		 */
-		final public static char ARRAY_END = ']';
+		public String ARRAY_END = "]";
 		/**
 		 * Array start char on JSON.
 		 */
-		final public static char ARRAY_START = '[';
+		public String ARRAY_START = "[";
+		/**
+		 * Declare that the comment ended.
+		 */
+		public String COMMENT_END = "*/";
+		/**
+		 * Declare that further characters are commented. Until the {@link #COMMENT_END} cancel it.
+		 */
+		public String COMMENT_START = "/*";
 		/**
 		 * Pair mapping char on JSON.
 		 */
-		final public static char DECLARATION = ':';
+		public String DECLARATION = ":";
 		/**
 		 * Pair equation char on other JSON like formats.
 		 */
-		final public static char EQUATION = '=';
-		/**
-		 * Member end char on JSON.
-		 */
-		final public static char MEMBER_END = ',';
-		/**
-		 * Object end char on JSON.
-		 */
-		final public static char OBJECT_END = '}';
-		/**
-		 * Object start char on JSON.
-		 */
-		final public static char OBJECT_START = '{';
-		/**
-		 * String end char on JSON.
-		 */
-		final public static char STRING_END = '"';
-		/**
-		 * String start char on JSON.
-		 */
-		final public static char STRING_START = '"';
-	}
-
-	/**
-	 * JSON constant values.
-	 */
-	final public static class val {
+		public String EQUATION = "=";
 		/**
 		 * The value false of the type boolean on JSON.
 		 */
-		final public static String FALSE = "false";
+		public String FALSE = "false";
 		/**
-		 * No value.
+		 * A symbol used to shows a line. To make the code more readable.
 		 */
-		final public static String NON = "";
+		public String LINE = "\n";
+		/**
+		 * Declare that the line comment ended.
+		 */
+		public String LINE_COMMENT_END = "\n";
+		/**
+		 * Declare that the next characters are commented. Until the {@link #LINE_COMMENT_END} cancel it.
+		 */
+		public String LINE_COMMENT_START = "//";
+		/**
+		 * Member end char on JSON.
+		 */
+		public String MEMBER_END = ",";
 		/**
 		 * The value null on JSON.
 		 */
-		final public static String NULL = "null";
+		public String NULL = "null";
+		/**
+		 * Object end char on JSON.
+		 */
+		public String OBJECT_END = "}";
+		/**
+		 * Object start char on JSON.
+		 */
+		public String OBJECT_START = "{";
 		/**
 		 * Recurse reference on JSON.
 		 */
-		final public static String RECURSE = "this";
+		public String RECURSE = "this";
+		/**
+		 * String start char on JSON.
+		 */
+		public String STRING_END = "\"";
+		/**
+		 * String end char on JSON.
+		 */
+		public String STRING_START = "\"";
+		/**
+		 * A symbol used to show a gap between characters. TO make the code more readable.
+		 */
+		public String TAB = "\t";
 		/**
 		 * The value true of the type boolean on JSON.
 		 */
-		final public static String TRUE = "true";
+		public String TRUE = "true";
 	}
 
 	/**
@@ -920,7 +991,7 @@ public class JSON extends Format implements Global {
 		 * New format position.
 		 */
 		public JSONFormatPosition() {
-			this.shift = "\t";
+			this.shift = SYNTAX.TAB;
 			this.tab = "";
 		}
 
@@ -970,7 +1041,7 @@ public class JSON extends Format implements Global {
 			if (tab == null)
 				tab = this.shift;
 			if (shift == null)
-				shift = this.shift + "\t";
+				shift = this.shift + SYNTAX.TAB;
 			if (position == null)
 				position = new JSONFormatPosition(this.parents, parent, tab, shift);
 			if (klass == null)
