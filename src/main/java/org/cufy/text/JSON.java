@@ -632,18 +632,18 @@ public class JSON extends Format implements Global {
 			Objects.requireNonNull(position, "position");
 		}
 
+		if (Reader$.isRemainingEquals(reader, true, false, false, SYNTAX.ARRAY_START) != 0)
+			throw new ParseException("array not started");
+
 		buffer.set(new ArrayList<>(DEFAULT_MEMBERS_COUNT));
 		SyntaxTracker tracker = new SyntaxTracker(SYNTAX_NESTABLE, SYNTAX_LITERAL);
 		StringBuilder builder = new StringBuilder(DEFAULT_VALUE_LENGTH);
 		StringBuilder points = new StringBuilder(DEFAULT_VALUE_LENGTH);
 		boolean closed = false;
-
-		if (Reader$.isRemainingEquals(reader, true, false, false, SYNTAX.ARRAY_START) != 0)
-			throw new ParseException("array not started");
-
 //		//stands for: delete previous if comment
 		boolean dpic = true;
 		int i;
+
 		while ((i = reader.read()) != -1) {
 			char point = (char) i;
 
@@ -663,7 +663,7 @@ public class JSON extends Format implements Global {
 					points = new StringBuilder(DEFAULT_VALUE_LENGTH);
 					continue;
 				}
-			} else {
+			} else if (points.length() != 0) {
 				points = new StringBuilder(DEFAULT_VALUE_LENGTH);
 			}
 
@@ -768,19 +768,19 @@ public class JSON extends Format implements Global {
 			Objects.requireNonNull(position, "position");
 		}
 
+		if (Reader$.isRemainingEquals(reader, true, false, false, SYNTAX.OBJECT_START) != 0)
+			throw new ParseException("Object not started");
+
 		buffer.set(new HashMap<>(DEFAULT_MEMBERS_COUNT));
 		SyntaxTracker tracker = new SyntaxTracker(SYNTAX_NESTABLE, SYNTAX_LITERAL);
 		StringBuilder builder = new StringBuilder(DEFAULT_VALUE_LENGTH);
 		StringBuilder key = null;
 		StringBuilder points = new StringBuilder(DEFAULT_VALUE_LENGTH);
 		boolean closed = false;
-
-		if (Reader$.isRemainingEquals(reader, true, false, false, SYNTAX.OBJECT_START) != 0)
-			throw new ParseException("Object not started");
-
 		//stands for: delete previous if comment
 		boolean dpic = true;
 		int i;
+
 		while ((i = reader.read()) != -1) {
 			char point = (char) i;
 
@@ -814,7 +814,7 @@ public class JSON extends Format implements Global {
 					points = new StringBuilder(DEFAULT_VALUE_LENGTH);
 					continue;
 				}
-			} else {
+			} else if (points.length() != 0) {
 				points = new StringBuilder(DEFAULT_VALUE_LENGTH);
 			}
 
