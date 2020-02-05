@@ -469,7 +469,7 @@ public class JSON extends Format implements Global {
 			Objects.requireNonNull(reader, "reader");
 		}
 
-		reader.mark(DEFAULT_WHITE_SPACE_LENGTH + 1);
+		reader.mark(DEFAULT_WHITE_SPACE_LENGTH + SYNTAX.ARRAY_START.length());
 		int r = Reader$.isRemainingEquals(reader, true, false, false, SYNTAX.ARRAY_START);
 		reader.reset();
 		return r != -1;
@@ -566,7 +566,7 @@ public class JSON extends Format implements Global {
 			Objects.requireNonNull(reader, "reader");
 		}
 
-		reader.mark(DEFAULT_WHITE_SPACE_LENGTH + 1);
+		reader.mark(DEFAULT_WHITE_SPACE_LENGTH + SYNTAX.OBJECT_START.length());
 		int r = Reader$.isRemainingEquals(reader, true, false, false, SYNTAX.OBJECT_START);
 		reader.reset();
 
@@ -607,7 +607,7 @@ public class JSON extends Format implements Global {
 			Objects.requireNonNull(reader, "reader");
 		}
 
-		reader.mark(DEFAULT_WHITE_SPACE_LENGTH + 1);
+		reader.mark(DEFAULT_WHITE_SPACE_LENGTH + SYNTAX.STRING_START.length());
 		int r = Reader$.isRemainingEquals(reader, true, false, false, SYNTAX.STRING_START);
 		reader.reset();
 
