@@ -14,7 +14,11 @@ import cufy.lang.Global;
 import cufy.lang.Type;
 import org.cufy.text.JSON;
 
+import java.io.IOError;
+import java.io.IOException;
+import java.io.StringReader;
 import java.util.Objects;
+import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * A converter that supports everything in the {@link BaseConverter}. This converter supports the conversion between {@link String} and other {@link
@@ -78,12 +82,29 @@ public class JSONConverter extends BaseConverter implements Global {
 						  long.class,
 						  short.class
 					}))
-	protected Object stringToObject(String string, Class<?> productClass) {
+	protected Object stringToObject(String source, Class<?> productClass) {
 		if (DEBUGGING) {
-			Objects.requireNonNull(string, "string");
+			Objects.requireNonNull(source, "source");
 			Objects.requireNonNull(productClass, "productClass");
 		}
 
-		return this.convert(JSON.global.parse(string), productClass);
+		Class<?> sourceClass = JSON.global.classify(source);
+		AtomicReference<Object> buffer = new AtomicReference<>();
+
+		boolean iaf = sourceClass.isAssignableFrom(productClass);
+
+		if (iaf)
+			try {
+				buffer.set(productClass.getConstructor().newInstance());
+			} catch (ReflectiveOperationException ignored) {
+			}
+
+		try {
+			JSON.global.parse(buffer, new StringReader(source), null, sourceClass);
+		} catch (IOException e) {
+			throw new IOError(e);
+		}
+
+		return iaf ? buffer.get() : this.convert(buffer.get(), productClass);
 	}
 }

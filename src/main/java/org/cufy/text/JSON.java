@@ -635,7 +635,9 @@ public class JSON extends Format implements Global {
 		if (Reader$.isRemainingEquals(reader, true, false, false, SYNTAX.ARRAY_START) != 0)
 			throw new ParseException("array not started");
 
-		buffer.set(new ArrayList<>(DEFAULT_MEMBERS_COUNT));
+		if (buffer.get() == null)
+			buffer.set(new ArrayList<>(DEFAULT_MEMBERS_COUNT));
+
 		SyntaxTracker tracker = new SyntaxTracker(SYNTAX_NESTABLE, SYNTAX_LITERAL);
 		StringBuilder builder = new StringBuilder(DEFAULT_VALUE_LENGTH);
 		StringBuilder points = new StringBuilder(DEFAULT_VALUE_LENGTH);
@@ -771,7 +773,9 @@ public class JSON extends Format implements Global {
 		if (Reader$.isRemainingEquals(reader, true, false, false, SYNTAX.OBJECT_START) != 0)
 			throw new ParseException("Object not started");
 
-		buffer.set(new HashMap<>(DEFAULT_MEMBERS_COUNT));
+		if (buffer.get() == null)
+			buffer.set(new HashMap<>(DEFAULT_MEMBERS_COUNT));
+
 		SyntaxTracker tracker = new SyntaxTracker(SYNTAX_NESTABLE, SYNTAX_LITERAL);
 		StringBuilder builder = new StringBuilder(DEFAULT_VALUE_LENGTH);
 		StringBuilder key = null;
