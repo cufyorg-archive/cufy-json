@@ -657,9 +657,16 @@ public class JSON extends Format implements Global {
 				String past = points.append(point).toString();
 
 				if ((closed = past.endsWith(SYNTAX.ARRAY_END)) || past.endsWith(SYNTAX.MEMBER_END)) {
-					AtomicReference<?> subBuffer = new AtomicReference<>();
-					position.parse(subBuffer, new StringReader(builder.toString().trim()), null, null, buffer);
-					buffer.get().add(subBuffer.get());
+					{
+						Collection tmpArr = buffer.get();
+						Object tmpElm;
+						{
+							AtomicReference<?> tmpBuf = new AtomicReference<>();
+							position.parse(tmpBuf, new StringReader(builder.toString().trim()), null, null, buffer);
+							tmpElm = tmpBuf.get();
+						}
+						tmpArr.add(tmpElm);
+					}
 
 					builder = new StringBuilder(DEFAULT_VALUE_LENGTH);
 					points = new StringBuilder(DEFAULT_VALUE_LENGTH);
@@ -807,11 +814,22 @@ public class JSON extends Format implements Global {
 					if (key == null)
 						throw new ParseException("No equation symbol");
 
-					AtomicReference<?> kSubBuffer = new AtomicReference<>();
-					AtomicReference<?> vSubBuffer = new AtomicReference<>();
-					position.parse(kSubBuffer, new StringReader(key.toString().trim()), null, null, buffer);
-					position.parse(vSubBuffer, new StringReader(builder.toString().trim()), null, null, buffer);
-					buffer.get().put(kSubBuffer.get(), vSubBuffer.get());
+					{
+						Map tmpObj = buffer.get();
+						Object tmpKey;
+						Object tmpVal;
+						{
+							AtomicReference<?> tmpBuf = new AtomicReference<>();
+							position.parse(tmpBuf, new StringReader(key.toString().trim()), null, null, buffer);
+							tmpKey = tmpBuf.get();
+						}
+						{
+							AtomicReference<?> tmpBuf = new AtomicReference<>(tmpObj.get(tmpKey));
+							position.parse(tmpBuf, new StringReader(builder.toString().trim()), null, null, buffer);
+							tmpVal = tmpBuf.get();
+						}
+						tmpObj.put(tmpKey, tmpVal);
+					}
 
 					key = null;
 					builder = new StringBuilder(DEFAULT_VALUE_LENGTH);
