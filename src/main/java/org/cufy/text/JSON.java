@@ -818,17 +818,21 @@ public class JSON extends Format implements Global {
 						Map tmpObj = buffer.get();
 						Object tmpKey;
 						Object tmpVal;
+						Object oldVal;
 						{
 							AtomicReference<?> tmpBuf = new AtomicReference<>();
 							position.parse(tmpBuf, new StringReader(key.toString().trim()), null, null, buffer);
 							tmpKey = tmpBuf.get();
+							oldVal = tmpObj.get(tmpKey);
 						}
 						{
-							AtomicReference<?> tmpBuf = new AtomicReference<>(tmpObj.get(tmpKey));
+							AtomicReference<?> tmpBuf = new AtomicReference<>(oldVal);
 							position.parse(tmpBuf, new StringReader(builder.toString().trim()), null, null, buffer);
 							tmpVal = tmpBuf.get();
 						}
-						tmpObj.put(tmpKey, tmpVal);
+
+						if (tmpVal != oldVal)
+							tmpObj.put(tmpKey, tmpVal);
 					}
 
 					key = null;
