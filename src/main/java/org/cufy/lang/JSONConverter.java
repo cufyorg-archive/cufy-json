@@ -91,9 +91,7 @@ public class JSONConverter extends BaseConverter implements Global {
 		Class<?> sourceClass = JSON.global.classify(source);
 		AtomicReference<Object> buffer = new AtomicReference<>();
 
-		boolean iaf = sourceClass.isAssignableFrom(productClass);
-
-		if (iaf)
+		if (sourceClass.isAssignableFrom(productClass))
 			try {
 				buffer.set(productClass.getConstructor().newInstance());
 			} catch (ReflectiveOperationException ignored) {
@@ -105,6 +103,8 @@ public class JSONConverter extends BaseConverter implements Global {
 			throw new IOError(e);
 		}
 
-		return iaf ? buffer.get() : this.convert(buffer.get(), productClass);
+		Object product = buffer.get();
+
+		return productClass.isInstance(product) ? product : this.convert(buffer.get(), productClass);
 	}
 }
