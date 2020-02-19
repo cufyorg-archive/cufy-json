@@ -683,9 +683,10 @@ public class JSON extends Format implements Global {
 					builder.delete(builder.length() - 1, builder.length());
 					dpic = false;
 				}
+			} else if (dpic) {
+				builder.append(point);
 			} else {
 				dpic = true;
-				builder.append(point);
 			}
 		}
 
@@ -851,9 +852,10 @@ public class JSON extends Format implements Global {
 					builder.deleteCharAt(builder.length() - 1);
 					dpic = false;
 				}
+			} else if (dpic) {
+				builder.append(point);
 			} else {
 				dpic = true;
-				builder.append(point);
 			}
 		}
 

@@ -24,6 +24,21 @@ import java.util.concurrent.atomic.AtomicReference;
 @SuppressWarnings("JavaDoc")
 public class JSONTest {
 	@Test
+	public void commentTest() {
+		String s = "{\n" +
+				   "\t\"list\":[\n" +
+				   "\t\t/*abcddffqefa*/\"Success\"//wadefcwacesfeqaescd\n" +
+				   "\t]\n" +
+				   "}";
+
+		Map obj = (Map) JSON.global.parse(s);
+		List arr = (List) obj.get("list");
+
+		Assert.assertEquals("incorrect object size", 1, obj.size());
+		Assert.assertEquals("incorrect array size", 1, arr.size());
+		Assert.assertEquals("incorrect value", "Success", arr.get(0));
+	}
+	@Test
 	public void comment_array_object_nested() {
 		String source = "[3, 5, {9/*{],23myComment*/=//myMultiLineComment\n\"abc\"}]";
 
@@ -37,6 +52,19 @@ public class JSONTest {
 		Map<Object, Object> map = (Map<Object, Object>) list.get(2);
 
 		Assert.assertEquals("Wrong element in the key 9", "abc", map.get(9L));
+	}
+	@Test
+	public void directParse() throws IOException {
+		String source = "{\"a\"=3, \"b\"=4}";
+
+		Map map = new HashMap();
+		AtomicReference<Map> buffer = new AtomicReference<>(map);
+
+		JSON.global.parse(buffer, new StringReader(source), null, null);
+
+		Assert.assertEquals("Unexpected length", 2, map.size());
+		Assert.assertEquals("the key 'a' stores unexpected value", 3L, map.get("a"));
+		Assert.assertEquals("the key 'b' stores unexpected value", 4L, map.get("b"));
 	}
 	@Test
 	public void format_object_array_nested() {
@@ -65,18 +93,5 @@ public class JSONTest {
 		Assert.assertEquals("first number not detected", 9L, number.get(0).longValue());
 		Assert.assertEquals("second number not detected", 3L, number.get(1).longValue());
 		Assert.assertEquals("third number not detected", 5L, number.get(2).longValue());
-	}
-	@Test
-	public void directParse() throws IOException {
-		String source = "{\"a\"=3, \"b\"=4}";
-
-		Map map = new HashMap();
-		AtomicReference<Map> buffer = new AtomicReference<>(map);
-
-		JSON.global.parse(buffer, new StringReader(source), null, null);
-
-		Assert.assertEquals("Unexpected length", 2, map.size());
-		Assert.assertEquals("the key 'a' stores unexpected value", 3L, map.get("a"));
-		Assert.assertEquals("the key 'b' stores unexpected value", 4L, map.get("b"));
 	}
 }
