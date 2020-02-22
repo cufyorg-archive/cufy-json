@@ -15,10 +15,7 @@ import org.junit.Test;
 
 import java.io.IOException;
 import java.io.StringReader;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicReference;
 
 @SuppressWarnings("JavaDoc")
@@ -45,7 +42,7 @@ public class JSONTest {
 		//List<Object> list = JSONConverter.global.convert(source, ArrayList.class);
 		List<Object> list = (List<Object>) JSON.global.parse(source);
 
-		Assert.assertEquals("Wrong size", list.size(), 3);
+		Assert.assertEquals("Wrong size", 3, list.size());
 		Assert.assertEquals("Wrong 1st element", 3L, list.get(0));
 		Assert.assertEquals("Wrong 2nd element", 5L, list.get(1));
 
@@ -84,6 +81,48 @@ public class JSONTest {
 						  "}";
 		String actual = JSON.global.format(base);
 		Assert.assertEquals("Wrong format", expected, actual);
+	}
+	@Test
+	public void parse_array_keep_instance() throws IOException {
+		ArrayList list = new ArrayList();
+		ArrayList nestedOver = new ArrayList();
+		String nestedNon = "abc";
+
+		list.add(nestedOver);
+		list.add(nestedNon);
+
+		nestedOver.add(nestedNon);
+
+		String source = "[[\"def\", [0]], \"def\", [0]]";
+
+		JSON.global.parse(new AtomicReference<>(list), new StringReader(source), null, null);
+
+		Assert.assertEquals("Wrong base size", 3, list.size());
+
+		List nestedOverAfter = (List) list.get(0);
+
+		Assert.assertSame("Instance not overwritten", nestedOver, nestedOverAfter);
+		Assert.assertEquals("Wrong member value", "def", list.get(1));
+		Assert.assertEquals("Wrong member value", new ArrayList<>(Collections.singletonList(0L)), list.get(2));
+
+		Assert.assertEquals("Wrong over size", 2, nestedOverAfter.size());
+
+		Assert.assertEquals("Wrong member value", "def", nestedOverAfter.get(0));
+		Assert.assertEquals("Wrong member value", new ArrayList<>(Collections.singletonList(0L)), nestedOverAfter.get(1));
+
+		source = "[[\"jhi\"]]";
+
+		JSON.global.parse(new AtomicReference<>(list), new StringReader(source), null, null);
+
+		Assert.assertEquals("Wrong base size", 1, list.size());
+
+		nestedOverAfter = (List) list.get(0);
+
+		Assert.assertSame("Instance not overwritten", nestedOver, nestedOverAfter);
+
+		Assert.assertEquals("Wrong over size", 1, nestedOverAfter.size());
+
+		Assert.assertEquals("Wrong member value", "jhi", nestedOverAfter.get(0));
 	}
 	@Test
 	public void parse_object_array_nested() {

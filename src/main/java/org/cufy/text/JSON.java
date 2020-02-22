@@ -778,85 +778,145 @@ public class JSON extends Format implements Global {
 			Objects.requireNonNull(position, "position");
 		}
 
+		//pre operations
 		if (Reader$.isRemainingEquals(reader, true, false, false, SYNTAX.OBJECT_START) != 0)
 			throw new ParseException("Object not started");
-
 		if (buffer.get() == null)
 			buffer.set(new HashMap<>(DEFAULT_MEMBERS_COUNT));
 
-		SyntaxTracker tracker = new SyntaxTracker(SYNTAX_NESTABLE, SYNTAX_LITERAL);
-		StringBuilder builder = new StringBuilder(DEFAULT_VALUE_LENGTH);
-		StringBuilder key = null;
-		StringBuilder points = new StringBuilder(DEFAULT_VALUE_LENGTH);
+		//public declarations
+		Set keys = new HashSet();
 		boolean closed = false;
-		//stands for: delete previous if comment
-		boolean dpic = true;
-		int i;
 
-		while ((i = reader.read()) != -1) {
-			char point = (char) i;
+		//content parsing
+		{
+			//syntax manager
+			SyntaxTracker tracker = new SyntaxTracker(SYNTAX_NESTABLE, SYNTAX_LITERAL);
+			//content reading buffer (for key and value)
+			StringBuilder builder = new StringBuilder(DEFAULT_VALUE_LENGTH);
+			//key holder
+			StringBuilder key = null;
+			//short backtrace
+			StringBuilder backtrace = new StringBuilder(DEFAULT_VALUE_LENGTH);
+			//reading integer buffer
+			int i;
 
-			if (closed)
-				if (Character.isWhitespace(i))
-					continue;
-				else throw new ParseException("Object closed before text end");
-			if (tracker.length() == 0) {
-				String past = points.append(point).toString();
+			//comment mode
+			boolean comment = false;
 
-				if (past.endsWith(SYNTAX.DECLARATION) || past.endsWith(SYNTAX.EQUATION)) {
-					if (key != null)
-						throw new ParseException("Two equation symbol");
-					key = builder;
+			//foreach character
+			while ((i = reader.read()) != -1) {
+				//reading character buffer
+				char point = (char) i;
 
-					builder = new StringBuilder(DEFAULT_VALUE_LENGTH);
-					points = new StringBuilder(DEFAULT_VALUE_LENGTH);
-					continue;
-				} else if ((closed = past.endsWith(SYNTAX.OBJECT_END)) || past.endsWith(SYNTAX.MEMBER_END)) {
-					if (key == null)
-						throw new ParseException("No equation symbol");
+				if (closed)
+					//only white spaces are allowed when closed
+					if (Character.isWhitespace(i))
+						continue;
+					else throw new ParseException("Object closed before text end");
+				if (tracker.length() == 0) {
+					//complex inner pre-operations
+					backtrace.append(point);
 
-					{
-						Map tmpObj = buffer.get();
-						Object tmpKey;
-						Object tmpVal;
-						Object oldVal;
+					//represent the short past string
+					String past = backtrace.toString();
+
+					if (past.endsWith(SYNTAX.DECLARATION) || past.endsWith(SYNTAX.EQUATION)) {
+						//key reading mode is over| value reading mode
+						if (key != null)
+							throw new ParseException("Two equation symbol");
+
+						//switch reading destination address
+						key = builder;
+
+						builder = new StringBuilder(DEFAULT_VALUE_LENGTH);
+						backtrace = new StringBuilder(DEFAULT_VALUE_LENGTH);
+						continue;
+					} else if ((closed = past.endsWith(SYNTAX.OBJECT_END)) || past.endsWith(SYNTAX.MEMBER_END)) {
+						//value reading mode is over| key reading mode
+						if (key == null)
+							throw new ParseException("No equation symbol");
+
+						//resolve member
 						{
-							AtomicReference<?> tmpBuf = new AtomicReference<>();
-							position.parse(tmpBuf, new StringReader(key.toString().trim()), null, null, buffer);
-							tmpKey = tmpBuf.get();
+							Map tmpObj = buffer.get();
+							Object tmpKey;
+							Object tmpVal;
+							Object oldVal;
+
+							//resolve key
+							{
+								AtomicReference<?> tmpBuf = new AtomicReference<>();
+								position.parse(tmpBuf, new StringReader(key.toString().trim()), null, null, buffer);
+								tmpKey = tmpBuf.get();
+							}
+
+							//value to overwrite (use the same instance) (if possible)
 							oldVal = tmpObj.get(tmpKey);
-						}
-						{
-							AtomicReference<?> tmpBuf = new AtomicReference<>(oldVal);
-							position.parse(tmpBuf, new StringReader(builder.toString().trim()), null, null, buffer);
-							tmpVal = tmpBuf.get();
+
+							//resolve value
+							{
+								AtomicReference<?> tmpBuf = new AtomicReference<>(oldVal);
+								position.parse(tmpBuf, new StringReader(builder.toString().trim()), null, null, buffer);
+								tmpVal = tmpBuf.get();
+							}
+
+							if (tmpVal != oldVal)
+								//value instance overwriting is not possible
+								tmpObj.put(tmpKey, tmpVal);
+
+							//keys tracking
+							if (keys.contains(tmpKey))
+								throw new ParseException("duplicated key: " + tmpKey);
+							else keys.add(tmpKey);
 						}
 
-						if (tmpVal != oldVal)
-							tmpObj.put(tmpKey, tmpVal);
+						//switch reading destination addresses
+						key = null;
+
+						builder = new StringBuilder(DEFAULT_VALUE_LENGTH);
+						backtrace = new StringBuilder(DEFAULT_VALUE_LENGTH);
+						continue;
 					}
-
-					key = null;
-					builder = new StringBuilder(DEFAULT_VALUE_LENGTH);
-					points = new StringBuilder(DEFAULT_VALUE_LENGTH);
-					continue;
+				} else if (backtrace.length() != 0) {
+					//reset short backtrace
+					backtrace = new StringBuilder(DEFAULT_VALUE_LENGTH);
 				}
-			} else if (points.length() != 0) {
-				points = new StringBuilder(DEFAULT_VALUE_LENGTH);
-			}
 
-			tracker.append(point);
+				//notify syntax manager
+				tracker.append(point);
 
-			if (isInComment(tracker)) {
-				if (dpic) {
-					builder.deleteCharAt(builder.length() - 1);
-					dpic = false;
+				if (isInComment(tracker)) {
+					//currently in comment mode
+					if (!comment) {
+						//delete the comment open symbol
+						builder.deleteCharAt(builder.length() - 1);
+						comment = true;
+					}
+				} else if (comment) {
+					//comment mode is over (ignore the comment close symbol)
+					comment = false;
+				} else {
+					//append the reading content buffer
+					builder.append(point);
 				}
-			} else if (dpic) {
-				builder.append(point);
-			} else {
-				dpic = true;
 			}
+		}
+
+		//remove missing keys!
+		{
+			//tmp declarations
+			Map tmpObj = buffer.get();
+			Set rmvSet = new HashSet();
+
+			for (Object k : tmpObj.keySet())
+				if (!keys.contains(k))
+					//key is missing from the source
+					rmvSet.add(k);
+
+			//remove missing keys
+			for (Object k : rmvSet)
+				tmpObj.remove(k);
 		}
 
 		if (!closed)
