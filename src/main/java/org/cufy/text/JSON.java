@@ -632,61 +632,126 @@ public class JSON extends Format implements Global {
 			Objects.requireNonNull(position, "position");
 		}
 
+		//pre operations
 		if (Reader$.isRemainingEquals(reader, true, false, false, SYNTAX.ARRAY_START) != 0)
 			throw new ParseException("array not started");
-
 		if (buffer.get() == null)
 			buffer.set(new ArrayList<>(DEFAULT_MEMBERS_COUNT));
+		if (!(buffer.get() instanceof List))
+			buffer.get().clear();
 
-		SyntaxTracker tracker = new SyntaxTracker(SYNTAX_NESTABLE, SYNTAX_LITERAL);
-		StringBuilder builder = new StringBuilder(DEFAULT_VALUE_LENGTH);
-		StringBuilder points = new StringBuilder(DEFAULT_VALUE_LENGTH);
+		//public declarations
+		int index = 0;
+		boolean overwrite = buffer.get().size() > 0;
 		boolean closed = false;
-//		//stands for: delete previous if comment
-		boolean dpic = true;
-		int i;
 
-		while ((i = reader.read()) != -1) {
-			char point = (char) i;
+		//content parsing
+		{
+			//syntax manager
+			SyntaxTracker tracker = new SyntaxTracker(SYNTAX_NESTABLE, SYNTAX_LITERAL);
+			//content reading buffer (for members)
+			StringBuilder builder = new StringBuilder(DEFAULT_VALUE_LENGTH);
+			//short backtrace
+			StringBuilder backtrace = new StringBuilder(DEFAULT_VALUE_LENGTH);
+			//reading integer buffer
+			int i;
 
-			if (closed)
-				if (Character.isWhitespace(i))
-					continue;
-				else throw new ParseException("array closed before text end");
-			if (tracker.length() == 0) {
-				String past = points.append(point).toString();
+			//comment mode
+			boolean comment = false;
 
-				if ((closed = past.endsWith(SYNTAX.ARRAY_END)) || past.endsWith(SYNTAX.MEMBER_END)) {
-					{
-						Collection tmpArr = buffer.get();
-						Object tmpElm;
+			while ((i = reader.read()) != -1) {
+				char point = (char) i;
+
+				if (closed)
+					//only white spaces are allowed when closed
+					if (Character.isWhitespace(i))
+						continue;
+					else throw new ParseException("array closed before text end");
+				if (tracker.length() == 0) {
+					//complex inner pre-operations
+					backtrace.append(point);
+
+					//represent the short past string
+					String past = backtrace.toString();
+
+					if ((closed = past.endsWith(SYNTAX.ARRAY_END)) || past.endsWith(SYNTAX.MEMBER_END)) {
+						//resolve member
 						{
-							AtomicReference<?> tmpBuf = new AtomicReference<>();
-							position.parse(tmpBuf, new StringReader(builder.toString().trim()), null, null, buffer);
-							tmpElm = tmpBuf.get();
+							if (buffer.get() instanceof List && (overwrite = overwrite && buffer.get().size() > index)) {
+								//can overwrite
+								List tmpArr = (List) buffer.get();
+								Object tmpVal;
+
+								//value to overwrite (use the same instance) (if possible)
+								Object oldVal = tmpArr.get(index);
+
+								//resolve value
+								{
+									AtomicReference<?> tmpBuf = new AtomicReference<>(oldVal);
+									position.parse(tmpBuf, new StringReader(builder.toString().trim()), null, null, buffer);
+									tmpVal = tmpBuf.get();
+								}
+
+								if (tmpVal != oldVal)
+									tmpArr.set(index, tmpVal);
+
+								index++;
+							} else {
+								//no value overwriting (use the same instance)
+								Collection tmpArr = buffer.get();
+								Object tmpElm;
+
+								//resolve value
+								{
+									AtomicReference<?> tmpBuf = new AtomicReference<>();
+									position.parse(tmpBuf, new StringReader(builder.toString().trim()), null, null, buffer);
+									tmpElm = tmpBuf.get();
+								}
+
+								tmpArr.add(tmpElm);
+							}
 						}
-						tmpArr.add(tmpElm);
+
+						//switch reading destination addresses
+						builder = new StringBuilder(DEFAULT_VALUE_LENGTH);
+						backtrace = new StringBuilder(DEFAULT_VALUE_LENGTH);
+						continue;
 					}
-
-					builder = new StringBuilder(DEFAULT_VALUE_LENGTH);
-					points = new StringBuilder(DEFAULT_VALUE_LENGTH);
-					continue;
+				} else if (backtrace.length() != 0) {
+					//reset short backtrace
+					backtrace = new StringBuilder(DEFAULT_VALUE_LENGTH);
 				}
-			} else if (points.length() != 0) {
-				points = new StringBuilder(DEFAULT_VALUE_LENGTH);
+
+				//notify syntax manager
+				tracker.append(point);
+
+				if (isInComment(tracker)) {
+					//currently in comment mode
+					if (!comment) {
+						//delete the comment open symbol
+						builder.delete(builder.length() - 1, builder.length());
+						comment = true;
+					}
+				} else if (comment) {
+					//comment mode is over (ignore the comment close symbol)
+					comment = false;
+				} else {
+					//append the reading content buffer
+					builder.append(point);
+				}
 			}
+		}
 
-			tracker.append(point);
+		//delete unreached indexes
+		{
+			//since if it's collection, then it has been cleared before parsing
+			//if it's list and reached it's limit, then no need to remove
+			if (buffer.get() instanceof List && overwrite) {
+				List tmpArr = (List) buffer.get();
+				int size = tmpArr.size();
 
-			if (isInComment(tracker)) {
-				if (dpic) {
-					builder.delete(builder.length() - 1, builder.length());
-					dpic = false;
-				}
-			} else if (dpic) {
-				builder.append(point);
-			} else {
-				dpic = true;
+				//clear indexes missing in the source reader
+				tmpArr.subList(index, size).clear();
 			}
 		}
 
