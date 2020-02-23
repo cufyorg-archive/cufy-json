@@ -24,6 +24,7 @@ import java.io.IOException;
 import java.io.Reader;
 import java.io.StringReader;
 import java.io.Writer;
+import java.text.FieldPosition;
 import java.text.NumberFormat;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicReference;
@@ -160,33 +161,7 @@ public class JSON extends Format implements Global {
 	 */
 	public static JSON newInstance() {
 		JSON json = new JSON();
-
-		json.DEBUGGING = false;
-		json.DEFAULT_MEMBERS_COUNT = 10;
-		json.DEFAULT_NESTING_DEPTH = 5;
-		json.DEFAULT_VALUE_LENGTH = 20;
-		json.DEFAULT_WHITE_SPACE_LENGTH = 20;
-
-		json.NUMBER_FORMAT = NumberFormat.getInstance(Locale.ENGLISH);
-
-		json.STRING_ESCAPABLES = new HashMap<>();
-		json.STRING_ESCAPABLES.put("\\", "\\\\");
-		json.STRING_ESCAPABLES.put("\"", "\\\"");
-		json.STRING_ESCAPABLES.put("\n", "\\\n");
-		json.STRING_ESCAPABLES.put("\r", "\\\r");
-		json.STRING_ESCAPABLES.put("\t", "\\\t");
-
-		json.SYNTAX = new Syntax();
-
-		json.SYNTAX_NESTABLE = new HashMap<>();
-		json.SYNTAX_NESTABLE.put(json.SYNTAX.OBJECT_START, json.SYNTAX.OBJECT_END);
-		json.SYNTAX_NESTABLE.put(json.SYNTAX.ARRAY_START, json.SYNTAX.ARRAY_END);
-
-		json.SYNTAX_LITERAL = new HashMap<>();
-		json.SYNTAX_LITERAL.put(json.SYNTAX.STRING_START, json.SYNTAX.STRING_END);
-		json.SYNTAX_LITERAL.put(json.SYNTAX.COMMENT_START, json.SYNTAX.COMMENT_END);
-		json.SYNTAX_LITERAL.put(json.SYNTAX.LINE_COMMENT_START, json.SYNTAX.LINE_COMMENT_END);
-
+		json.setDefaults();
 		return json;
 	}
 
@@ -1035,6 +1010,62 @@ public class JSON extends Format implements Global {
 			value.replace(escapable.getValue(), escapable.getKey());
 
 		buffer.set(value);
+	}
+
+	/**
+	 * Set the default values of JSON for this json format.
+	 */
+	protected void setDefaults() {
+		this.DEBUGGING = false;
+		this.DEFAULT_MEMBERS_COUNT = 10;
+		this.DEFAULT_NESTING_DEPTH = 5;
+		this.DEFAULT_VALUE_LENGTH = 20;
+		this.DEFAULT_WHITE_SPACE_LENGTH = 20;
+
+		this.NUMBER_FORMAT = NumberFormat.getInstance(Locale.ENGLISH);
+		this.NUMBER_FORMAT = new NumberFormat() {
+			@Override
+			public StringBuffer format(double v, StringBuffer stringBuffer, FieldPosition fieldPosition) {
+				return stringBuffer.append(v).append("D");
+			}
+			@Override
+			public StringBuffer format(long l, StringBuffer stringBuffer, FieldPosition fieldPosition) {
+				return stringBuffer.append(l).append("L");
+			}
+			@Override
+			public Number parse(String s, java.text.ParsePosition parsePosition) {
+				switch (s.charAt(s.length() - 1)) {
+					case 'D':
+						return Double.parseDouble(s);
+					case 'F':
+						return Float.parseFloat(s);
+					case 'L':
+						return Long.parseLong(s);
+					default:
+						return s.contains(".") ?
+							   Double.parseDouble(s) :
+							   Long.parseLong(s);
+				}
+			}
+		};
+
+		this.STRING_ESCAPABLES = new HashMap<>();
+		this.STRING_ESCAPABLES.put("\\", "\\\\");
+		this.STRING_ESCAPABLES.put("\"", "\\\"");
+		this.STRING_ESCAPABLES.put("\n", "\\\n");
+		this.STRING_ESCAPABLES.put("\r", "\\\r");
+		this.STRING_ESCAPABLES.put("\t", "\\\t");
+
+		this.SYNTAX = new Syntax();
+
+		this.SYNTAX_NESTABLE = new HashMap<>();
+		this.SYNTAX_NESTABLE.put(this.SYNTAX.OBJECT_START, this.SYNTAX.OBJECT_END);
+		this.SYNTAX_NESTABLE.put(this.SYNTAX.ARRAY_START, this.SYNTAX.ARRAY_END);
+
+		this.SYNTAX_LITERAL = new HashMap<>();
+		this.SYNTAX_LITERAL.put(this.SYNTAX.STRING_START, this.SYNTAX.STRING_END);
+		this.SYNTAX_LITERAL.put(this.SYNTAX.COMMENT_START, this.SYNTAX.COMMENT_END);
+		this.SYNTAX_LITERAL.put(this.SYNTAX.LINE_COMMENT_START, this.SYNTAX.LINE_COMMENT_END);
 	}
 
 	/**
