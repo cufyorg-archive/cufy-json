@@ -470,6 +470,29 @@ public class JSON extends Format implements Global {
 		return r != -1;
 	}
 	/**
+	 * Check if no value the reader contains.
+	 *
+	 * @param reader to read from
+	 * @return whether the given string is no value
+	 * @throws IOException          when any I/O exception occurs
+	 * @throws NullPointerException if any of the given parameters is null
+	 */
+	@ClassifyMethod(Empty.class)
+	protected boolean isEmpty(Reader reader) throws IOException {
+		if (DEBUGGING) {
+			Objects.requireNonNull(reader, "reader");
+		}
+
+		reader.mark(DEFAULT_WHITE_SPACE_LENGTH);
+
+		int i;
+		while ((i = reader.read()) != -1 && Character.isWhitespace(i)) ;
+
+		reader.reset();
+
+		return i == -1;
+	}
+	/**
 	 * Check if the given tracker is in a comment literal or not.
 	 *
 	 * @param tracker to check for
@@ -651,6 +674,7 @@ public class JSON extends Format implements Global {
 
 					if ((closed = past.endsWith(SYNTAX.ARRAY_END)) || past.endsWith(SYNTAX.MEMBER_END)) {
 						//resolve member
+						resolve:
 						{
 							if (buffer.get() instanceof List && (overwrite = overwrite && buffer.get().size() > index)) {
 								//can overwrite
@@ -667,6 +691,11 @@ public class JSON extends Format implements Global {
 									tmpVal = tmpBuf.get();
 								}
 
+								if (tmpVal instanceof Empty)
+									if (closed)
+										break resolve;
+									else throw new ParseException("Elements cant be empty!");
+
 								if (tmpVal != oldVal)
 									tmpArr.set(index, tmpVal);
 
@@ -682,6 +711,11 @@ public class JSON extends Format implements Global {
 									position.parse(tmpBuf, new StringReader(builder.toString().trim()), null, null, buffer);
 									tmpElm = tmpBuf.get();
 								}
+
+								if (tmpElm instanceof Empty)
+									if (closed)
+										break resolve;
+									else throw new ParseException("Elements cant be empty!");
 
 								tmpArr.add(tmpElm);
 							}
@@ -760,6 +794,28 @@ public class JSON extends Format implements Global {
 		}
 	}
 	/**
+	 * Set empty to the given buffer.
+	 *
+	 * @param reader to read from
+	 * @param buffer to set the value to
+	 * @throws NullPointerException if any of the given parameters is null
+	 * @throws IOException          if any I/O exception occurred
+	 */
+	@ParseMethod(@Type(Empty.class))
+	protected void parseEmpty(AtomicReference<Object> buffer, Reader reader) throws IOException {
+		if (DEBUGGING) {
+			Objects.requireNonNull(buffer, "buffer");
+			Objects.requireNonNull(reader, "reader");
+
+			int i;
+			while ((i = reader.read()) != -1)
+				if (Character.isWhitespace(i))
+					throw new ParseException("Cannot parse as empty");
+		}
+
+		buffer.set(new Empty());
+	}
+	/**
 	 * Set null to the given buffer.
 	 *
 	 * @param reader to read from
@@ -768,7 +824,7 @@ public class JSON extends Format implements Global {
 	 * @throws IOException          if any I/O exception occurred
 	 */
 	@ParseMethod(@Type(Void.class))
-	protected void parseNull(Reader reader, AtomicReference<Object> buffer) throws IOException {
+	protected void parseNull(AtomicReference<Object> buffer, Reader reader) throws IOException {
 		if (DEBUGGING) {
 			Objects.requireNonNull(buffer, "buffer");
 
@@ -873,12 +929,15 @@ public class JSON extends Format implements Global {
 						backtrace = new StringBuilder(DEFAULT_VALUE_LENGTH);
 						continue;
 					} else if ((closed = past.endsWith(SYNTAX.OBJECT_END)) || past.endsWith(SYNTAX.MEMBER_END)) {
-						//value reading mode is over| key reading mode
-						if (key == null)
-							throw new ParseException("No equation symbol");
-
 						//resolve member
+						resolve:
 						{
+							//value reading mode is over| key reading mode
+							if (key == null)
+								if (closed)
+									break resolve;
+								else throw new ParseException("No equation symbol");
+
 							Map tmpObj = buffer.get();
 							Object tmpKey;
 							Object tmpVal;
@@ -891,7 +950,9 @@ public class JSON extends Format implements Global {
 								tmpKey = tmpBuf.get();
 							}
 
-							//value to overwrite (use the same instance) (if possible)
+							if (tmpKey instanceof Empty)
+								throw new ParseException("Keys can't be empty!");
+
 							oldVal = tmpObj.get(tmpKey);
 
 							//resolve value
@@ -1037,18 +1098,16 @@ public class JSON extends Format implements Global {
 				parsePosition.setIndex(1);
 				switch (s.charAt(s.length() - 1)) {
 					case 'D':
-						return Double.parseDouble(s.substring(0, s.length() -1));
+						return Double.parseDouble(s.substring(0, s.length() - 1));
 					case 'F':
-						return Float.parseFloat(s.substring(0, s.length() -1));
+						return Float.parseFloat(s.substring(0, s.length() - 1));
 					case 'L':
-						return Long.parseLong(s.substring(0, s.length() -1));
+						return Long.parseLong(s.substring(0, s.length() - 1));
 					default:
 						if (s.contains(".")) {
-							Number n = Double.parseDouble(s);
-							return n;
+							return Double.parseDouble(s);
 						} else {
-							Number n = Long.parseLong(s);
-							return n;
+							return Long.parseLong(s);
 						}
 				}
 			}
@@ -1071,6 +1130,12 @@ public class JSON extends Format implements Global {
 		this.SYNTAX_LITERAL.put(this.SYNTAX.STRING_START, this.SYNTAX.STRING_END);
 		this.SYNTAX_LITERAL.put(this.SYNTAX.COMMENT_START, this.SYNTAX.COMMENT_END);
 		this.SYNTAX_LITERAL.put(this.SYNTAX.LINE_COMMENT_START, this.SYNTAX.LINE_COMMENT_END);
+	}
+
+	/**
+	 * Presents emptiness.
+	 */
+	protected static class Empty {
 	}
 
 	/**

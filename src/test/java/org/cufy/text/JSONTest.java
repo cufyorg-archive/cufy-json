@@ -10,6 +10,7 @@
  */
 package org.cufy.text;
 
+import cufy.text.ParseException;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -62,6 +63,38 @@ public class JSONTest {
 		Assert.assertEquals("Unexpected length", 2, map.size());
 		Assert.assertEquals("the key 'a' stores unexpected value", 3L, map.get("a"));
 		Assert.assertEquals("the key 'b' stores unexpected value", 4L, map.get("b"));
+	}
+	@Test()
+	public void empty() {
+		Collection collection = (Collection) JSON.global.parse("[]");
+		Map map = (Map) JSON.global.parse("{}");
+
+		Assert.assertTrue("expected empty collection!", collection.isEmpty());
+		Assert.assertTrue("expected empty map!", map.isEmpty());
+
+		collection = (Collection) JSON.global.parse("[0,]");
+		map = (Map) JSON.global.parse("{0:0,}");
+
+		Assert.assertEquals("expected singleton collection!", 1, collection.size());
+		Assert.assertEquals("expected singleton map!", 1, map.size());
+		Assert.assertEquals("wrong member value", 0L, collection.iterator().next());
+		Assert.assertEquals("wrong member value", 0L, map.get(0L));
+
+		try {
+			JSON.global.parse("{,}");
+			Assert.fail("expected \"No equation symbol\" exception!");
+		} catch (ParseException ignored) {
+		}
+		try {
+			JSON.global.parse(":");
+			Assert.fail("expected \"Keys can't be empty\" exception!");
+		} catch (ParseException ignored) {
+		}
+		try {
+			JSON.global.parse("[,]");
+			Assert.fail("expected \"Elements can't be empty\" exception!");
+		} catch (ParseException ignored) {
+		}
 	}
 	@Test
 	public void format_object_array_nested() {
