@@ -1034,17 +1034,22 @@ public class JSON extends Format implements Global {
 			}
 			@Override
 			public Number parse(String s, java.text.ParsePosition parsePosition) {
+				parsePosition.setIndex(1);
 				switch (s.charAt(s.length() - 1)) {
 					case 'D':
-						return Double.parseDouble(s);
+						return Double.parseDouble(s.substring(0, s.length() -1));
 					case 'F':
-						return Float.parseFloat(s);
+						return Float.parseFloat(s.substring(0, s.length() -1));
 					case 'L':
-						return Long.parseLong(s);
+						return Long.parseLong(s.substring(0, s.length() -1));
 					default:
-						return s.contains(".") ?
-							   Double.parseDouble(s) :
-							   Long.parseLong(s);
+						if (s.contains(".")) {
+							Number n = Double.parseDouble(s);
+							return n;
+						} else {
+							Number n = Long.parseLong(s);
+							return n;
+						}
 				}
 			}
 		};

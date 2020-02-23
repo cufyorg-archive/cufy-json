@@ -73,9 +73,9 @@ public class JSONTest {
 		String expected = "{\n" +
 						  "\t\"map\":{\n" +
 						  "\t\t\"number\":[\n" +
-						  "\t\t\t9,\n" +
-						  "\t\t\t3,\n" +
-						  "\t\t\t5\n" +
+						  "\t\t\t9L,\n" +
+						  "\t\t\t3L,\n" +
+						  "\t\t\t5L\n" +
 						  "\t\t]\n" +
 						  "\t}\n" +
 						  "}";
