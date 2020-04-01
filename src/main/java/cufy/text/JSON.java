@@ -146,13 +146,13 @@ public class JSON extends AbstractFormat {
 	 */
 	protected Map<String, String> SYNTAX_COMMENT;
 	/**
-	 * The literal symbols relationships for {@link SyntaxTracker}.
+	 * The literal symbols relationships for the syntax tracker.
 	 *
 	 * @apiNote final after initialization
 	 */
 	protected Map<String, String> SYNTAX_LITERAL;
 	/**
-	 * The nestable symbols relationships for {@link SyntaxTracker}.
+	 * The nestable symbols relationships for the syntax tracker.
 	 *
 	 * @apiNote final after initialization
 	 */

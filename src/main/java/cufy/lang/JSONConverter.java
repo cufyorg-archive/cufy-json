@@ -10,9 +10,9 @@
  */
 package cufy.lang;
 
-import cufy.cnv.BaseConverter;
-import cufy.cnv.ConvertArguments;
-import cufy.cnv.ConvertMethod;
+import cufy.convert.BaseConverter;
+import cufy.convert.ConvertArguments;
+import cufy.convert.ConvertMethod;
 import cufy.meta.MetaFamily;
 import cufy.meta.MetaReference;
 import cufy.text.JSON;
