@@ -1,6 +1,5 @@
-package org.cufy.lang;
+package cufy.lang;
 
-import cufy.lang.Clazz;
 import cufy.util.Array$;
 import org.junit.Assert;
 import org.junit.Test;

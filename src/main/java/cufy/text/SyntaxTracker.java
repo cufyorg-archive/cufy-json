@@ -8,7 +8,7 @@
  *   By adding a new header (at the bottom of this header)
  *   with the word "Editor" on top of it.
  */
-package org.cufy.text;
+package cufy.text;
 
 import java.io.IOException;
 import java.util.ArrayList;

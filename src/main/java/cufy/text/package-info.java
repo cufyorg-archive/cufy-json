@@ -9,10 +9,10 @@
  *   with the word "Editor" on top of it.
  */
 /**
- * Language support.
+ * All about text.
  *
  * @author LSaferSE
- * @version 1 release (25-Jan-20)
- * @since 25-Jan-20
+ * @version 2 release (13-Dec-2019)
+ * @since 13-Dec-19
  */
-package org.cufy.lang;
+package cufy.text;

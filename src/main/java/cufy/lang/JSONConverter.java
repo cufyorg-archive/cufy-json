@@ -8,14 +8,14 @@
  *   By adding a new header (at the bottom of this header)
  *   with the word "Editor" on top of it.
  */
-package org.cufy.lang;
+package cufy.lang;
 
 import cufy.cnv.BaseConverter;
 import cufy.cnv.ConvertArguments;
 import cufy.cnv.ConvertMethod;
 import cufy.meta.MetaFamily;
 import cufy.meta.MetaReference;
-import org.cufy.text.JSON;
+import cufy.text.JSON;
 
 import java.io.IOError;
 import java.io.IOException;
@@ -25,7 +25,7 @@ import java.util.Objects;
 
 /**
  * A converter that supports everything in the {@link BaseConverter}. This converter supports the conversion between {@link String} and other {@link
- * Object}s. Using {@link org.cufy.text.JSON}.
+ * Object}s. Using {@link cufy.text.JSON}.
  *
  * @author LSaferSE
  * @version 1 release (25-Jan-2020)

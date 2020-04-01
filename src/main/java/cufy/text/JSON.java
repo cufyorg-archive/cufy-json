@@ -8,7 +8,7 @@
  *   By adding a new header (at the bottom of this header)
  *   with the word "Editor" on top of it.
  */
-package org.cufy.text;
+package cufy.text;
 
 import cufy.lang.Clazz;
 import cufy.lang.Empty;
@@ -16,7 +16,6 @@ import cufy.lang.Recurse;
 import cufy.lang.Static;
 import cufy.meta.MetaFamily;
 import cufy.meta.MetaReference;
-import cufy.text.*;
 import cufy.util.Array$;
 import cufy.util.Reader$;
 import cufy.util.Reflect$;

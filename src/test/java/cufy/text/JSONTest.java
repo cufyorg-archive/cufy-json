@@ -8,9 +8,8 @@
  *   By adding a new header (at the bottom of this header)
  *   with the word "Editor" on top of it.
  */
-package org.cufy.text;
+package cufy.text;
 
-import cufy.text.ParseException;
 import org.junit.Assert;
 import org.junit.Test;
 
