@@ -10,11 +10,13 @@
  */
 package cufy.text;
 
+import cufy.concurrent.Forever;
+import cufy.concurrent.Loop;
 import org.junit.Assert;
 import org.junit.Test;
 
-import java.io.IOException;
-import java.io.StringReader;
+import java.io.*;
+import java.net.URL;
 import java.util.*;
 
 @SuppressWarnings("JavaDoc")
@@ -115,6 +117,82 @@ public class JSONTest {
 						  "}";
 		String actual = JSON.format(base);
 		Assert.assertEquals("Wrong format", expected, actual);
+	}
+
+	@Test
+	public void jsonplaceholder_typicode_comments() throws IOException, InterruptedException {
+		InputStream c;
+
+		try {
+			c = new URL("https://jsonplaceholder.typicode.com/comments").openStream();
+		} catch (IOException e) {
+			//no internet!
+			return;
+		}
+
+		Loop<?, ?> display = new Forever().thread();
+
+		Thread.currentThread().setName("Parser");
+		display.getThread(t -> t.setName("Display"));
+
+		JSON.global.cparse(new BufferedReader(new InputStreamReader(c)), new ArrayList() {
+			@Override
+			public boolean add(Object element) {
+				super.add(element);
+				display.post(l -> {
+//					System.out.println("\n----------------");
+//					System.out.println("From thread: " + Thread.currentThread());
+//					System.out.println(JSON.format(element));
+//					System.out.println("----------------\n");
+					JSON.format(element);
+					return false;
+				});
+
+				return true;
+			}
+		});
+
+		display.notify(Loop.BREAK).join(l -> {
+			throw new InternalError("took the Display Loop more than 10 seconds to stop");
+		}, 10000);
+	}
+
+	@Test
+	public void jsonplaceholder_typicode_todos() throws IOException, InterruptedException {
+		InputStream c;
+
+		try {
+			c = new URL("https://jsonplaceholder.typicode.com/todos").openStream();
+		} catch (IOException e) {
+			//no internet!
+			return;
+		}
+
+		Loop<?, ?> display = new Forever().thread();
+
+		Thread.currentThread().setName("Parser");
+		display.getThread(t -> t.setName("Display"));
+
+		JSON.global.cparse(new BufferedReader(new InputStreamReader(c)), new ArrayList() {
+			@Override
+			public boolean add(Object element) {
+				super.add(element);
+				display.post(l -> {
+//					System.out.println("\n----------------");
+//					System.out.println("From thread: " + Thread.currentThread());
+//					System.out.println(JSON.format(element));
+//					System.out.println("----------------\n");
+					JSON.format(element);
+					return false;
+				});
+
+				return true;
+			}
+		});
+
+		display.notify(Loop.BREAK).join(l -> {
+			throw new InternalError("took the Display Loop more than 10 seconds to stop");
+		}, 10000);
 	}
 
 	@Test
