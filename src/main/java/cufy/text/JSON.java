@@ -954,7 +954,7 @@ public class JSON extends AbstractFormat {
 	 * @throws NullPointerException if the given 'arguments' is null
 	 * @throws IOException          if any I/O exception occurred
 	 */
-	@FormatMethod(
+	@ParseMethod(
 			@MetaFamily(
 					in = Void.class
 			))
@@ -1244,7 +1244,7 @@ public class JSON extends AbstractFormat {
 			@MetaFamily(
 					subin = CharSequence.class
 			))
-	protected void parseString(ParseArguments arguments) throws IOException, ReflectiveOperationException {
+	protected void parseString(ParseArguments<CharSequence, CharSequence> arguments) throws IOException, ReflectiveOperationException {
 		if (DEBUGGING) {
 			Objects.requireNonNull(arguments, "arguments");
 		}
@@ -1263,9 +1263,9 @@ public class JSON extends AbstractFormat {
 		else if (CharSequence.class.isAssignableFrom(klass))
 			//if we can construct a new of that clazz
 			try {
-				arguments.output = klass.getMethod("valueOf", String.class).invoke(null, value);
+				arguments.output = (CharSequence) klass.getMethod("valueOf", String.class).invoke(null, value);
 			} catch (ReflectiveOperationException e) {
-				arguments.output = klass.getConstructor(String.class).newInstance(value);
+				arguments.output = (CharSequence) klass.getConstructor(String.class).newInstance(value);
 			}
 		else if (klass.isAssignableFrom(CharSequence.class))
 			//if the results can satisfied the clazz
