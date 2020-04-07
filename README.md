@@ -39,7 +39,7 @@ JSON.global.cparse(inputReader, outputObject, outputClazz);
 To use more formatting specifications:
 
 ```java 
-JSON.global.format(inputObject, outputObject, inputClazz, outputClazz);
+JSON.global.format(inputObject, outputWriter, inputClazz, outputClazz);
 ```
 
 [clazz]: https://github.com/cufyorg/base/blob/master/src/main/java/cufy/lang/Clazz.java
