@@ -23,13 +23,13 @@ dependencies {
 To parse a json-text:
 
 ```java
-Object outputObject = JSNO.parse(inputString);
+outputObject = JSNO.parse(inputString);
 ```
 
 To format an object to a json-text:
 
 ```java
-String outputString = JSON.format(inputObject);
+outputString = JSON.format(inputObject);
 ```
 
 To use more parsing specifications:
@@ -39,7 +39,7 @@ JSON.global.parse(inputReader, outputObject, inputClazz, outputClazz);
 ```
 or if you want to classify the input:
 ```java
-JSON.global.cparse(inputReader, outputObject, Clazz outputClazz);
+JSON.global.cparse(inputReader, outputObject, outputClazz);
 ```
 
 To use more formatting specifications:
